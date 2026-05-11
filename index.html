@@ -68,7 +68,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        const Icon = ({ name, className = "" }) => <i className={`${name} ${className}`}></i>;
+        // Komponen Ikon yang lebih aman untuk mencegah error ukuran
+        const Icon = ({ name, size = 16, className = "" }) => (
+            <i className={`${name} ${className}`} style={{ fontSize: size }}></i>
+        );
 
         const TARGET_PERTEMUAN = 18;
 
@@ -77,7 +80,7 @@
         // ==========================================
         const APP_USERS = [
             // AKUN KOORDINATOR (ADMIN)
-            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Admin-Koordinator' },
+            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
             
             // PEMBIMBING MATEMATIKA
             { id: 'mat_1',     name: 'Nabila Khodijah A.R.',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
@@ -339,25 +342,90 @@
           { id: 'belum', label: 'Belum Dikuasai', color: 'bg-rose-500', hex: '#ef4444', icon: <Icon name="fa-solid fa-circle-exclamation" size={16} /> },
         ];
 
+        // ==========================================
+        // FUNGSI BANTU (Helper) & VALIDASI AMAN
+        // ==========================================
+        
+        // PENGAMAN TANGGAL: Fungsi ini anti-crash untuk format tanggal apa pun
+        const safeDate = (dateStr) => {
+            try {
+                if (!dateStr) return "-";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return "Tanggal Tidak Valid";
+                return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+            } catch(e) { return "Tanggal Tidak Valid"; }
+        };
+
+        const safeTime = (dateStr) => {
+            try {
+                if (!dateStr) return "-";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return "--:--";
+                return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute:'2-digit' });
+            } catch(e) { return "--:--"; }
+        };
+
+        const safeShortDate = (dateStr) => {
+            try {
+                if (!dateStr) return "-";
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return "-";
+                return d.toLocaleDateString('id-ID', { day:'numeric', month:'short' });
+            } catch(e) { return "-"; }
+        };
+
+        // PENGAMAN GENERATOR TANGGAL YYYY-MM-DD
+        const getLocalYYYYMMDD = () => {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const parseScore = (scoreStr) => {
+          if (!scoreStr) return 0;
+          const str = String(scoreStr).trim();
+          if (str.includes('/')) {
+            const [num, den] = str.split('/');
+            const n = Number(num);
+            const d = Number(den);
+            if (d === 0 || isNaN(n) || isNaN(d)) return 0;
+            return (n / d) * 100;
+          }
+          const val = Number(str);
+          return isNaN(val) ? 0 : val;
+        };
+
         const getStudentStats = (studentProg) => {
-          let totalDuration = 0, totalScore = 0, scoreCount = 0, belumCount = 0, pendalamanCount = 0;
-          Object.values(studentProg).forEach(data => {
+          let totalDuration = 0;
+          let totalScore = 0;
+          let scoreCount = 0;
+          let belumCount = 0;
+          let pendalamanCount = 0;
+
+          if (!studentProg || typeof studentProg !== 'object') {
+              return { totalDuration, avgScore: 0, belumCount, pendalamanCount };
+          }
+
+          Object.entries(studentProg).forEach(([key, data]) => {
+            if (key === '__statusOverride' || data === null || data === undefined) return;
+
             const status = typeof data === 'object' ? (data.status || 'belum') : (data || 'belum');
             const dur = typeof data === 'object' ? Number(data.duration) : 0;
             const score = typeof data === 'object' ? data.score : '';
+
             if (status === 'belum') belumCount++;
             if (status === 'pendalaman') pendalamanCount++;
             if (dur && !isNaN(dur)) totalDuration += dur;
             if (score) {
-              const str = String(score).trim();
-              let val = 0;
-              if (str.includes('/')) {
-                const [n, d] = str.split('/'); val = (Number(n)/Number(d))*100;
-              } else { val = Number(str); }
-              if(!isNaN(val)) { totalScore += val; scoreCount++; }
+              totalScore += parseScore(score);
+              scoreCount++;
             }
           });
-          return { totalDuration, avgScore: scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0, belumCount, pendalamanCount };
+
+          const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
+          return { totalDuration, avgScore, belumCount, pendalamanCount };
         };
 
         // ==========================================
@@ -403,7 +471,7 @@
             else if (dynStatus.status === 'Tdk Ada') colorClass = 'bg-rose-100 text-rose-700 border-rose-200';
 
             const handleClick = (e) => {
-                e.stopPropagation();
+                e.stopPropagation(); // Mencegah bentrok klik dengan kartu siswa
                 if (appUser?.role === 'admin' && onOverride) {
                     onOverride(student);
                 }
@@ -431,9 +499,9 @@
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center animate-in zoom-in-95 duration-200 border border-slate-100">
                         <div className="w-16 h-16 mx-auto bg-slate-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-slate-100">
                             {config.type === 'confirm' ? (
-                                <Icon name="fa-solid fa-triangle-exclamation text-amber-500 text-3xl animate-pulse" />
+                                <Icon name="fa-solid fa-triangle-exclamation" className="text-amber-500 text-3xl animate-pulse" />
                             ) : (
-                                <Icon name="fa-solid fa-circle-info text-[#5b51d8] text-3xl" />
+                                <Icon name="fa-solid fa-circle-info" className="text-[#5b51d8] text-3xl" />
                             )}
                         </div>
                         <h3 className="text-lg font-black text-slate-800 mb-2">
@@ -527,524 +595,9 @@
         };
 
         // ==========================================
-        // KOMPONEN: ABSENSI GURU (DENGAN FOTO, TANGGAL & ZOOM)
+        // KOMPONEN: DASHBOARD (PERSIS SEPERTI DESAIN CLAUDE + HAK VETO)
         // ==========================================
-        const AttendanceView = ({ appUser, attendanceData, setAttendanceData, showAlert, showConfirm }) => {
-            const [isSubmitting, setIsSubmitting] = useState(false);
-            const [showForm, setShowForm] = useState(false);
-            
-            const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('en-CA').split('T')[0]); 
-            const [location, setLocation] = useState("");
-            const [photoData, setPhotoData] = useState(null);
-            const fileInputRef = useRef(null);
-
-            const [adminInputGuruId, setAdminInputGuruId] = useState(null);
-            const [adminSelectedDate, setAdminSelectedDate] = useState(new Date().toLocaleDateString('en-CA').split('T')[0]);
-            const [adminLocation, setAdminLocation] = useState("");
-            const [adminPhotoData, setAdminPhotoData] = useState(null);
-            const adminFileInputRef = useRef(null);
-
-            const [zoomedPhoto, setZoomedPhoto] = useState(null);
-
-            const handleImageUpload = (e, setPhotoState) => {
-                const file = e.target.files[0];
-                if (!file) return;
-
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800; 
-                        let scaleSize = 1;
-                        if (img.width > MAX_WIDTH) {
-                            scaleSize = MAX_WIDTH / img.width;
-                        }
-                        canvas.width = img.width * scaleSize;
-                        canvas.height = img.height * scaleSize;
-                        
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
-                        setPhotoState(dataUrl);
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            };
-
-            const handleAbsen = async () => {
-                if (appUser.role !== 'guru') return;
-                if (!location.trim()) { showAlert("Mohon isi lokasi/materi pembimbingan."); return; }
-                if (!photoData) { showAlert("Mohon unggah foto bukti kegiatan."); return; }
-
-                setIsSubmitting(true);
-                
-                const targetDate = new Date();
-                const [year, month, day] = selectedDate.split('-');
-                targetDate.setFullYear(year, month - 1, day);
-                
-                const existingLogs = attendanceData[appUser.id]?.logs || [];
-                
-                const newLog = { 
-                    id: Date.now().toString(),
-                    timestamp: targetDate.toISOString(),
-                    location: location,
-                    photo: photoData,
-                    isAdminInput: false
-                };
-                
-                try {
-                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', appUser.id), { logs: [...existingLogs, newLog] });
-                    showAlert("Absensi berhasil dicatat! Terima kasih.");
-                    setShowForm(false);
-                    setLocation("");
-                    setPhotoData(null);
-                    setSelectedDate(new Date().toLocaleDateString('en-CA').split('T')[0]); 
-                } catch (error) {
-                    console.error("Gagal absen", error);
-                    showAlert("Gagal mengirim data. Cek koneksi internet.");
-                }
-                setIsSubmitting(false);
-            };
-
-            const handleAdminAbsen = async () => {
-                if (!adminLocation.trim()) { showAlert("Lokasi & Materi wajib diisi."); return; }
-                
-                setIsSubmitting(true);
-                
-                const targetDate = new Date();
-                const [year, month, day] = adminSelectedDate.split('-');
-                targetDate.setFullYear(year, month - 1, day);
-
-                const existingLogs = attendanceData[adminInputGuruId]?.logs || [];
-                
-                const newLog = { 
-                    id: Date.now().toString(),
-                    timestamp: targetDate.toISOString(),
-                    location: adminLocation,
-                    photo: adminPhotoData || "", 
-                    isAdminInput: true 
-                };
-                
-                try {
-                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', adminInputGuruId), { logs: [...existingLogs, newLog] });
-                    showAlert("Absensi manual berhasil dicatat ke sistem!");
-                    setAdminInputGuruId(null);
-                    setAdminLocation("");
-                    setAdminPhotoData(null);
-                    setAdminSelectedDate(new Date().toLocaleDateString('en-CA').split('T')[0]);
-                } catch (error) {
-                    console.error("Gagal absen manual", error);
-                    showAlert("Gagal menyimpan data manual. Cek koneksi internet.");
-                }
-                setIsSubmitting(false);
-            };
-
-            const handleDeleteLog = async (userId, logId) => {
-                showConfirm("Apakah Anda yakin ingin membatalkan/menghapus catatan absen ini? Aksi ini tidak dapat dikembalikan.", async () => {
-                    const userLogs = attendanceData[userId]?.logs || [];
-                    const newLogs = userLogs.filter(l => l.id !== logId && l.timestamp !== logId); 
-                    
-                    try {
-                        await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', userId), { logs: newLogs });
-                    } catch (error) {
-                        console.error("Gagal menghapus", error);
-                    }
-                });
-            };
-
-            if (appUser.role === 'admin') {
-                const guruUsers = APP_USERS.filter(u => u.role === 'guru');
-                const [expandedAdminAtt, setExpandedAdminAtt] = useState({});
-
-                const toggleAdminAtt = (guruId) => {
-                    setExpandedAdminAtt(prev => ({ ...prev, [guruId]: !prev[guruId] }));
-                };
-                
-                return (
-                    <div className="space-y-6 animate-in fade-in pb-20">
-                        
-                        {zoomedPhoto && (
-                            <div className="fixed inset-0 bg-slate-950/95 z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={() => setZoomedPhoto(null)}>
-                                <button className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-rose-500 rounded-full text-white flex items-center justify-center transition-colors" onClick={() => setZoomedPhoto(null)}>
-                                    <Icon name="fa-solid fa-xmark text-2xl" />
-                                </button>
-                                <img src={zoomedPhoto} alt="Zoomed Bukti" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
-                            </div>
-                        )}
-
-                        {adminInputGuruId && (
-                            <div className="fixed inset-0 bg-slate-900/70 z-[60] flex items-center justify-center p-4 animate-in fade-in">
-                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[90vh] overflow-y-auto">
-                                    <button onClick={() => setAdminInputGuruId(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
-                                        <Icon name="fa-solid fa-xmark text-lg" />
-                                    </button>
-                                    <h3 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
-                                        <Icon name="fa-solid fa-user-check text-[#5b51d8]" /> Input Absen Manual
-                                    </h3>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b pb-3">
-                                        Untuk: <span className="text-[#5b51d8]">{APP_USERS.find(u => u.id === adminInputGuruId)?.name}</span>
-                                    </p>
-                                    
-                                    <div className="space-y-4 text-left">
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Pelaksanaan</label>
-                                            <input 
-                                                type="date" 
-                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700"
-                                                value={adminSelectedDate}
-                                                onChange={e => setAdminSelectedDate(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi (Wajib)</label>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Contoh: Asrama - Bimbingan Mandiri" 
-                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium"
-                                                value={adminLocation}
-                                                onChange={e => setAdminLocation(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Opsional)</label>
-                                            <input type="file" accept="image/*" ref={adminFileInputRef} onChange={(e) => handleImageUpload(e, setAdminPhotoData)} className="hidden" />
-                                            <div className="flex gap-3 items-center">
-                                                <button onClick={() => adminFileInputRef.current.click()} className="flex-1 bg-white border-2 border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors">
-                                                    <Icon name="fa-solid fa-camera" /> Tambah Foto
-                                                </button>
-                                                {adminPhotoData && (
-                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group cursor-pointer" onClick={() => setZoomedPhoto(adminPhotoData)}>
-                                                        <img src={adminPhotoData} alt="Preview" className="w-full h-full object-cover" />
-                                                        <button onClick={(e) => { e.stopPropagation(); setAdminPhotoData(null); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Icon name="fa-solid fa-trash text-white" />
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <p className="text-[9px] text-amber-600 mt-2 italic font-bold"><Icon name="fa-solid fa-circle-info" /> Foto opsional karena diinput langsung oleh Koordinator.</p>
-                                        </div>
-
-                                        <div className="flex gap-3 mt-8 pt-4 border-t border-slate-200">
-                                            <button onClick={() => setAdminInputGuruId(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
-                                                Batal
-                                            </button>
-                                            <button onClick={handleAdminAbsen} disabled={isSubmitting || !adminLocation.trim()} className={`flex-1 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md ${isSubmitting || !adminLocation.trim() ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-indigo-500/30'}`}>
-                                                {isSubmitting ? 'Menyimpan...' : 'Simpan Absen'}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
-                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-                                <Icon name="fa-solid fa-users-viewfinder text-2xl text-indigo-600" />
-                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Absensi & Kehadiran</h3>
-                            </div>
-                            <p className="text-sm text-slate-500 mb-6 font-medium">Klik pada kartu nama guru untuk melihat rincian riwayat bimbingan, atau menginput kehadiran mereka secara manual.</p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {guruUsers.map(guru => {
-                                    const logs = attendanceData[guru.id]?.logs || [];
-                                    const count = logs.length;
-                                    const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
-                                    const colorInfo = FIELDS.find(f => f.id === guru.field);
-                                    const isExpanded = expandedAdminAtt[guru.id];
-                                    
-                                    return (
-                                        <div key={guru.id} className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:border-indigo-300">
-                                            <button 
-                                                onClick={() => toggleAdminAtt(guru.id)}
-                                                className="w-full p-5 flex flex-col items-start bg-white hover:bg-slate-50 transition-colors text-left"
-                                            >
-                                                <div className="flex justify-between items-start w-full mb-3">
-                                                    <div>
-                                                        <div className="font-bold text-slate-800 text-base md:text-lg">{guru.name}</div>
-                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{guru.title}</div>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`text-[10px] font-black text-white px-2 py-1 rounded shadow-sm ${colorInfo?.color || 'bg-slate-800'}`}>
-                                                            {count} / {TARGET_PERTEMUAN}
-                                                        </span>
-                                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-400`} />
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
-                                                    <div className={`h-full transition-all duration-1000 ${pct >= 100 ? 'bg-emerald-500' : 'bg-[#5b51d8]'}`} style={{ width: `${pct}%` }}></div>
-                                                </div>
-                                                <div className="w-full text-right mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{pct}% Tercapai</div>
-                                            </button>
-
-                                            {isExpanded && (
-                                                <div className="p-4 border-t border-slate-200 bg-slate-50/50">
-                                                    <div className="flex justify-end mb-4">
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setAdminInputGuruId(guru.id);
-                                                                setAdminLocation("");
-                                                                setAdminPhotoData(null);
-                                                            }}
-                                                            className="text-[10px] font-black text-white bg-[#5b51d8] hover:bg-indigo-700 px-3 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-2 uppercase tracking-widest"
-                                                        >
-                                                            <Icon name="fa-solid fa-user-plus" /> Input Absen Manual
-                                                        </button>
-                                                    </div>
-
-                                                    {logs.length === 0 ? (
-                                                        <p className="text-sm text-slate-400 italic text-center py-4 font-medium">Belum ada riwayat bimbingan.</p>
-                                                    ) : (
-                                                        <ul className="space-y-3">
-                                                            {logs.slice().reverse().map((log, i) => (
-                                                                <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-indigo-200 transition-colors">
-                                                                    <div 
-                                                                        className="w-full sm:w-24 h-32 sm:h-24 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center relative group cursor-pointer"
-                                                                        onClick={() => log.photo && setZoomedPhoto(log.photo)}
-                                                                    >
-                                                                        {log.photo ? (
-                                                                            <>
-                                                                                <img src={log.photo} alt="Bukti" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                                                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <Icon name="fa-solid fa-magnifying-glass-plus text-white text-xl" />
-                                                                                </div>
-                                                                            </>
-                                                                        ) : (
-                                                                            <Icon name="fa-solid fa-image text-slate-300 text-2xl" />
-                                                                        )}
-                                                                        {log.isAdminInput && (
-                                                                            <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
-                                                                        )}
-                                                                    </div>
-                                                                    
-                                                                    <div className="flex flex-col justify-between flex-grow text-left">
-                                                                        <div>
-                                                                            <div className="flex justify-between items-start mb-1 border-b border-slate-100 pb-2">
-                                                                                <div className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
-                                                                                    <Icon name="fa-regular fa-calendar-check text-emerald-500" />
-                                                                                    {new Date(log.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}
-                                                                                </div>
-                                                                                <span className="text-slate-400 text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded shadow-sm">{new Date(log.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
-                                                                            </div>
-                                                                            <div className="text-xs text-slate-600 font-medium mt-2 flex flex-col gap-1.5">
-                                                                                <span className="flex items-start gap-2">
-                                                                                    <Icon name="fa-solid fa-location-dot text-rose-500 mt-0.5 shrink-0" /> 
-                                                                                    <span className="leading-relaxed">{log.location || 'Lokasi tidak dicantumkan'}</span>
-                                                                                </span>
-                                                                                {log.isAdminInput && (
-                                                                                    <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 w-fit px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest mt-1">
-                                                                                        <Icon name="fa-solid fa-user-shield mr-1" /> Diinput Koord.
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="mt-3 text-right">
-                                                                            <button 
-                                                                                onClick={() => handleDeleteLog(guru.id, log.id || log.timestamp)}
-                                                                                className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors"
-                                                                            >
-                                                                                <Icon name="fa-solid fa-trash-can mr-1" /> Batalkan Absen Ini
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            // Tampilan Khusus Guru
-            const myLogs = attendanceData[appUser.id]?.logs || [];
-            const count = myLogs.length;
-            const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
-
-            return (
-                <div className="space-y-6 animate-in fade-in pb-24">
-                    
-                    {zoomedPhoto && (
-                        <div className="fixed inset-0 bg-slate-950/95 z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={() => setZoomedPhoto(null)}>
-                            <button className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-rose-500 rounded-full text-white flex items-center justify-center transition-colors" onClick={() => setZoomedPhoto(null)}>
-                                <Icon name="fa-solid fa-xmark text-2xl" />
-                            </button>
-                            <img src={zoomedPhoto} alt="Zoomed Bukti" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
-                        </div>
-                    )}
-
-                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 text-center">
-                        <h2 className="text-2xl font-black text-slate-800 mb-2">Presensi Kehadiran Pembimbing</h2>
-                        <p className="text-sm text-slate-500 mb-8 font-medium">Wajib diisi setiap selesai melaksanakan bimbingan sebagai bukti administrasi vakasi.</p>
-                        
-                        {!showForm ? (
-                            <button 
-                                onClick={() => setShowForm(true)}
-                                className="w-full max-w-sm h-16 rounded-2xl shadow-lg mx-auto flex items-center justify-center transition-all bg-gradient-to-r from-indigo-600 to-[#5b51d8] text-white hover:scale-105 active:scale-95 cursor-pointer pulse-active"
-                            >
-                                <Icon name="fa-solid fa-fingerprint text-2xl mr-3" />
-                                <span className="font-black tracking-widest uppercase text-sm">Isi Kehadiran / Absen</span>
-                            </button>
-                        ) : (
-                            <div className="max-w-md mx-auto bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left animate-in slide-in-from-top-4 shadow-sm">
-                                <h4 className="font-black text-indigo-700 mb-4 flex items-center gap-2 border-b border-indigo-100 pb-3"><Icon name="fa-solid fa-camera-retro" /> Form Bukti Kehadiran</h4>
-                                
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Bimbingan</label>
-                                        <input 
-                                            type="date" 
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700 shadow-sm"
-                                            value={selectedDate}
-                                            onChange={e => setSelectedDate(e.target.value)}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi Pembimbingan</label>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Contoh: Lab IPA - Termodinamika" 
-                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium shadow-sm"
-                                            value={location}
-                                            onChange={e => setLocation(e.target.value)}
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Selfie / Suasana)</label>
-                                        <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={(e) => handleImageUpload(e, setPhotoData)} className="hidden" />
-                                        
-                                        <div className="flex gap-3 items-center">
-                                            <button 
-                                                onClick={() => fileInputRef.current.click()}
-                                                className="flex-1 bg-white border-2 border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-sm"
-                                            >
-                                                <Icon name="fa-solid fa-camera" /> Ambil / Pilih Foto
-                                            </button>
-                                            
-                                            {photoData && (
-                                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group cursor-pointer" onClick={() => setZoomedPhoto(photoData)}>
-                                                    <img src={photoData} alt="Preview" className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Icon name="fa-solid fa-magnifying-glass-plus text-white" />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
-                                        <button 
-                                            onClick={() => {setShowForm(false); setPhotoData(null); setLocation(""); setSelectedDate(new Date().toLocaleDateString('en-CA').split('T')[0]);}}
-                                            className="flex-1 bg-white border border-slate-300 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-50 transition-colors"
-                                        >
-                                            Batal
-                                        </button>
-                                        <button 
-                                            onClick={handleAbsen}
-                                            disabled={isSubmitting || !location || !photoData}
-                                            className={`flex-1 font-bold py-3 rounded-xl text-xs uppercase tracking-widest transition-all ${isSubmitting || !location || !photoData ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/30'}`}
-                                        >
-                                            {isSubmitting ? 'Mengirim...' : 'Kirim Absen'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-black text-slate-800 text-lg">Progres Target Bimbingan</h3>
-                            <span className="font-black text-indigo-600 text-xl">{count} <span className="text-sm text-slate-400">/ {TARGET_PERTEMUAN}</span></span>
-                        </div>
-                        <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner mb-2">
-                            <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${pct}%` }}></div>
-                        </div>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">{pct}% Tercapai dari Target Sekolah</p>
-
-                        <div className="mt-8 text-left">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Riwayat Kehadiran Bapak/Ibu</h4>
-                            {myLogs.length === 0 ? (
-                                <p className="text-sm text-slate-400 italic text-center py-6 font-medium">Belum ada riwayat mengajar tercatat.</p>
-                            ) : (
-                                <ul className="space-y-3">
-                                    {myLogs.slice().reverse().map((log, i) => (
-                                        <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden hover:border-indigo-200 transition-colors">
-                                            <div 
-                                                className="w-full sm:w-20 h-32 sm:h-20 bg-slate-200 rounded-lg overflow-hidden shrink-0 border border-slate-300 relative group cursor-pointer"
-                                                onClick={() => log.photo && setZoomedPhoto(log.photo)}
-                                            >
-                                                {log.photo ? (
-                                                    <>
-                                                        <img src={log.photo} alt="Bukti" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Icon name="fa-solid fa-magnifying-glass-plus text-white" />
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center"><Icon name="fa-solid fa-image text-slate-400 text-2xl" /></div>
-                                                )}
-                                                {log.isAdminInput && (
-                                                    <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
-                                                )}
-                                            </div>
-
-                                            <div className="flex flex-col justify-between flex-grow">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-1 border-b border-slate-200 pb-2">
-                                                        <div className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
-                                                            <Icon name="fa-regular fa-calendar-check text-emerald-500" />
-                                                            {new Date(log.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                                                        </div>
-                                                        <span className="text-slate-400 text-[10px] font-black">{new Date(log.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
-                                                    </div>
-                                                    <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-1.5 leading-relaxed">
-                                                        <span className="flex items-start gap-2">
-                                                            <Icon name="fa-solid fa-location-dot text-rose-500 mt-0.5 shrink-0" /> 
-                                                            <span className="leading-relaxed">{log.location || 'Lokasi tidak dicantumkan'}</span>
-                                                        </span>
-                                                        {log.isAdminInput && (
-                                                            <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 w-fit px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest mt-1">
-                                                                <Icon name="fa-solid fa-user-shield mr-1" /> Diinput Koord.
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="mt-3 text-right z-10">
-                                                    <button 
-                                                        onClick={() => handleDeleteLog(appUser.id, log.id || log.timestamp)}
-                                                        className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded border border-rose-100 transition-colors shadow-sm"
-                                                    >
-                                                        <Icon name="fa-solid fa-xmark mr-1" /> Hapus / Batal
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // ==========================================
-        // KOMPONEN: DASHBOARD (STATISTIK)
-        // ==========================================
-        const Dashboard = ({ progressData, activeField, appUser, onOverrideStatus }) => {
+        const Dashboard = ({ progressData, activeField, appUser, onOverrideStatus, onJumpToStudent }) => {
           const filteredStudents = useMemo(() => {
             return activeField === 'ALL' ? DELEGASI : DELEGASI.filter(s => s.field === activeField);
           }, [activeField]);
@@ -1057,7 +610,14 @@
               const pData = progressData[student.id] || {};
               studentSyllabus.forEach(topic => {
                 const statData = pData[topic.id];
-                const statusVal = typeof statData === 'object' ? (statData.status || 'belum') : (statData || 'belum');
+                let statusVal = 'belum';
+                
+                if (statData && typeof statData === 'object') {
+                    statusVal = statData.status || 'belum';
+                } else if (statData && typeof statData === 'string') {
+                    statusVal = statData;
+                }
+                
                 if (counts[statusVal] !== undefined) counts[statusVal]++;
               });
             });
@@ -1099,7 +659,16 @@
               const studentProg = progressData[student.id] || {};
               const syllabusLen = SYLLABUS_DB[student.field].length;
               const stStats = getStudentStats(studentProg);
-              const amanCount = Object.values(studentProg).filter(v => (v.status || v) === 'aman').length;
+              
+              let amanCount = 0;
+              if (studentProg && typeof studentProg === 'object') {
+                  Object.entries(studentProg).forEach(([k, v]) => {
+                      if (k === '__statusOverride' || !v) return;
+                      const status = typeof v === 'object' ? v.status : v;
+                      if (status === 'aman') amanCount++;
+                  });
+              }
+              
               const percentAman = Math.round((amanCount / syllabusLen) * 100);
 
               csvContent += `"${student.name}","${student.field}","${student.initialStatus}","${percentAman}%","${stStats.totalDuration}","${stStats.avgScore}","${stStats.belumCount}"\n`;
@@ -1194,7 +763,7 @@
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {warningStudents.map(student => (
-                      <div key={student.id} className="bg-white p-4 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between hover:border-red-300 transition-colors cursor-pointer" onClick={() => onOverrideStatus && onOverrideStatus(student)}>
+                      <div key={student.id} className="bg-white p-4 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between hover:border-red-300 transition-colors cursor-pointer" onClick={() => onJumpToStudent && onJumpToStudent(student.id)} title="Klik untuk melihat detail progres">
                         <div>
                           <div className="font-bold text-slate-800 text-sm">{student.name}</div>
                           <div className="text-xs text-slate-500 uppercase">{student.field}</div>
@@ -1235,14 +804,25 @@
                     const studentProg = progressData[student.id] || {};
                     const syllabusLen = SYLLABUS_DB[student.field].length;
                     const stStats = getStudentStats(studentProg);
-                    const amanCount = Object.values(studentProg).filter(v => (v.status || v) === 'aman').length;
-                    const pendalamanCount = Object.values(studentProg).filter(v => (v.status || v) === 'pendalaman').length;
+                    
+                    let amanCount = 0;
+                    let pendalamanCount = 0;
+                    
+                    if (studentProg && typeof studentProg === 'object') {
+                        Object.entries(studentProg).forEach(([k, v]) => {
+                            if (k === '__statusOverride' || !v) return;
+                            const status = typeof v === 'object' ? v.status : v;
+                            if (status === 'aman') amanCount++;
+                            if (status === 'pendalaman') pendalamanCount++;
+                        });
+                    }
+
                     const percentAman = Math.round((amanCount / syllabusLen) * 100);
                     const percentPendalaman = Math.round((pendalamanCount / syllabusLen) * 100);
                     const fieldColor = FIELDS.find(f => f.id === student.field)?.color || 'bg-slate-800';
 
                     return (
-                      <div key={student.id} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-indigo-300 transition-colors cursor-pointer" onClick={() => onOverrideStatus && onOverrideStatus(student)}>
+                      <div key={student.id} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-indigo-300 transition-colors cursor-pointer" onClick={() => onJumpToStudent && onJumpToStudent(student.id)} title="Klik untuk melihat detail progres">
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2">
                             <span className={`text-[10px] text-white px-2 py-0.5 rounded font-bold ${fieldColor}`}>{student.field}</span>
@@ -1254,11 +834,12 @@
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
+                          <div className="text-right flex flex-col items-end">
                             <span className="text-lg font-black text-slate-800">{percentAman}%</span>
+                            <div className="mt-1"><StatusBadge student={student} pData={studentProg} appUser={appUser} onOverride={onOverrideStatus} /></div>
                           </div>
                         </div>
-                        <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                        <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
                           <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${percentAman}%` }}></div>
                           <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${percentPendalaman}%` }}></div>
                         </div>
@@ -1272,11 +853,538 @@
         };
 
         // ==========================================
+        // KOMPONEN: ABSENSI GURU (DENGAN FOTO, TANGGAL & ZOOM)
+        // ==========================================
+        const AttendanceView = ({ appUser, attendanceData, showAlert, showConfirm }) => {
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [showForm, setShowForm] = useState(false);
+            
+            const [selectedDate, setSelectedDate] = useState(getLocalYYYYMMDD()); 
+            const [location, setLocation] = useState("");
+            const [photoData, setPhotoData] = useState(null);
+            const fileInputRef = useRef(null);
+
+            const [adminInputGuruId, setAdminInputGuruId] = useState(null);
+            const [adminSelectedDate, setAdminSelectedDate] = useState(getLocalYYYYMMDD());
+            const [adminLocation, setAdminLocation] = useState("");
+            const [adminPhotoData, setAdminPhotoData] = useState(null);
+            const adminFileInputRef = useRef(null);
+
+            const [zoomedPhoto, setZoomedPhoto] = useState(null);
+
+            const handleImageUpload = (e, setPhotoState) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800; 
+                        let scaleSize = 1;
+                        if (img.width > MAX_WIDTH) {
+                            scaleSize = MAX_WIDTH / img.width;
+                        }
+                        canvas.width = img.width * scaleSize;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7); 
+                        setPhotoState(dataUrl);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            const handleAbsen = async () => {
+                if (appUser.role !== 'guru') return;
+                if (!location.trim()) { showAlert("Mohon isi lokasi/materi pembimbingan."); return; }
+                if (!photoData) { showAlert("Mohon unggah foto bukti kegiatan."); return; }
+
+                setIsSubmitting(true);
+                
+                const targetDate = new Date();
+                const [year, month, day] = selectedDate.split('-');
+                if(year && month && day) {
+                    targetDate.setFullYear(year, month - 1, day);
+                }
+                
+                const existingLogs = attendanceData[appUser.id]?.logs || [];
+                
+                const newLog = { 
+                    id: Date.now().toString(),
+                    timestamp: targetDate.toISOString(),
+                    location: location,
+                    photo: photoData,
+                    isAdminInput: false
+                };
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', appUser.id), { logs: [...existingLogs, newLog] });
+                    showAlert("Absensi berhasil dicatat! Terima kasih.");
+                    setShowForm(false);
+                    setLocation("");
+                    setPhotoData(null);
+                    setSelectedDate(getLocalYYYYMMDD()); 
+                } catch (error) {
+                    console.error("Gagal absen", error);
+                    showAlert("Gagal mengirim data. Cek koneksi internet.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleAdminAbsen = async () => {
+                if (!adminLocation.trim()) { showAlert("Lokasi & Materi wajib diisi."); return; }
+                
+                setIsSubmitting(true);
+                
+                const targetDate = new Date();
+                const [year, month, day] = adminSelectedDate.split('-');
+                if(year && month && day) {
+                    targetDate.setFullYear(year, month - 1, day);
+                }
+
+                const existingLogs = attendanceData[adminInputGuruId]?.logs || [];
+                
+                const newLog = { 
+                    id: Date.now().toString(),
+                    timestamp: targetDate.toISOString(),
+                    location: adminLocation,
+                    photo: adminPhotoData || "", 
+                    isAdminInput: true 
+                };
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', adminInputGuruId), { logs: [...existingLogs, newLog] });
+                    showAlert("Absensi manual berhasil dicatat ke sistem!");
+                    setAdminInputGuruId(null);
+                    setAdminLocation("");
+                    setAdminPhotoData(null);
+                    setAdminSelectedDate(getLocalYYYYMMDD());
+                } catch (error) {
+                    console.error("Gagal absen manual", error);
+                    showAlert("Gagal menyimpan data manual. Cek koneksi internet.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleDeleteLog = async (userId, logId) => {
+                showConfirm("Apakah Anda yakin ingin membatalkan/menghapus catatan absen ini? Aksi ini tidak dapat dikembalikan.", async () => {
+                    const userLogs = attendanceData[userId]?.logs || [];
+                    const newLogs = userLogs.filter(l => l.id !== logId && l.timestamp !== logId); 
+                    
+                    try {
+                        await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', userId), { logs: newLogs });
+                    } catch (error) {
+                        console.error("Gagal menghapus", error);
+                    }
+                });
+            };
+
+            if (appUser.role === 'admin') {
+                const guruUsers = APP_USERS.filter(u => u.role === 'guru');
+                const [expandedAdminAtt, setExpandedAdminAtt] = useState({});
+
+                const toggleAdminAtt = (guruId) => {
+                    setExpandedAdminAtt(prev => ({ ...prev, [guruId]: !prev[guruId] }));
+                };
+                
+                return (
+                    <div className="space-y-6 animate-in fade-in pb-20">
+                        
+                        {zoomedPhoto && (
+                            <div className="fixed inset-0 bg-slate-950/95 z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={() => setZoomedPhoto(null)}>
+                                <button className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-rose-500 rounded-full text-white flex items-center justify-center transition-colors" onClick={() => setZoomedPhoto(null)}>
+                                    <Icon name="fa-solid fa-xmark" className="text-2xl" />
+                                </button>
+                                <img src={zoomedPhoto} alt="Zoomed Bukti" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+                            </div>
+                        )}
+
+                        {adminInputGuruId && (
+                            <div className="fixed inset-0 bg-slate-900/70 z-[60] flex items-center justify-center p-4 animate-in fade-in">
+                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200 border border-slate-100 max-h-[90vh] overflow-y-auto">
+                                    <button onClick={() => setAdminInputGuruId(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
+                                        <Icon name="fa-solid fa-xmark" size={18} />
+                                    </button>
+                                    <h3 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
+                                        <Icon name="fa-solid fa-user-check" className="text-[#5b51d8]" /> Input Absen Manual
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b pb-3">
+                                        Untuk: <span className="text-[#5b51d8]">{APP_USERS.find(u => u.id === adminInputGuruId)?.name}</span>
+                                    </p>
+                                    
+                                    <div className="space-y-4 text-left">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Pelaksanaan</label>
+                                            <input 
+                                                type="date" 
+                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700"
+                                                value={adminSelectedDate}
+                                                onChange={e => setAdminSelectedDate(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi (Wajib)</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Contoh: Asrama - Bimbingan Mandiri" 
+                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium"
+                                                value={adminLocation}
+                                                onChange={e => setAdminLocation(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Opsional)</label>
+                                            <input type="file" accept="image/*" ref={adminFileInputRef} onChange={(e) => handleImageUpload(e, setAdminPhotoData)} className="hidden" />
+                                            <div className="flex gap-3 items-center">
+                                                <button onClick={() => adminFileInputRef.current.click()} className="flex-1 bg-white border-2 border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors">
+                                                    <Icon name="fa-solid fa-camera" /> Tambah Foto
+                                                </button>
+                                                {adminPhotoData && (
+                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group cursor-pointer" onClick={() => setZoomedPhoto(adminPhotoData)}>
+                                                        <img src={adminPhotoData} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button onClick={(e) => { e.stopPropagation(); setAdminPhotoData(null); }} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Icon name="fa-solid fa-trash" className="text-white" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-[9px] text-amber-600 mt-2 italic font-bold"><Icon name="fa-solid fa-circle-info" /> Foto opsional karena diinput langsung oleh Koordinator.</p>
+                                        </div>
+
+                                        <div className="flex gap-3 mt-8 pt-4 border-t border-slate-200">
+                                            <button onClick={() => setAdminInputGuruId(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                                                Batal
+                                            </button>
+                                            <button onClick={handleAdminAbsen} disabled={isSubmitting || !adminLocation.trim()} className={`flex-1 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md ${isSubmitting || !adminLocation.trim() ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-indigo-500/30'}`}>
+                                                {isSubmitting ? 'Menyimpan...' : 'Simpan Absen'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                                <Icon name="fa-solid fa-users-viewfinder" className="text-2xl text-indigo-600" />
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Kontrol Vakasi & Kehadiran</h3>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-6 font-medium">Klik pada kartu nama guru untuk melihat rincian riwayat bimbingan, atau menginput kehadiran mereka secara manual.</p>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {guruUsers.map(guru => {
+                                    const logs = attendanceData[guru.id]?.logs || [];
+                                    const count = logs.length;
+                                    const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
+                                    const colorInfo = FIELDS.find(f => f.id === guru.field);
+                                    const isExpanded = expandedAdminAtt[guru.id];
+                                    
+                                    return (
+                                        <div key={guru.id} className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:border-indigo-300">
+                                            <button 
+                                                onClick={() => toggleAdminAtt(guru.id)}
+                                                className="w-full p-5 flex flex-col items-start bg-white hover:bg-slate-50 transition-colors text-left"
+                                            >
+                                                <div className="flex justify-between items-start w-full mb-3">
+                                                    <div>
+                                                        <div className="font-bold text-slate-800 text-base md:text-lg">{guru.name}</div>
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{guru.title}</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-black text-white px-2 py-1 rounded shadow-sm ${colorInfo?.color || 'bg-slate-800'}`}>
+                                                            {count} / {TARGET_PERTEMUAN}
+                                                        </span>
+                                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`} className="text-slate-400" />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
+                                                    <div className={`h-full transition-all duration-1000 ${pct >= 100 ? 'bg-emerald-500' : 'bg-[#5b51d8]'}`} style={{ width: `${pct}%` }}></div>
+                                                </div>
+                                                <div className="w-full text-right mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{pct}% Tercapai</div>
+                                            </button>
+
+                                            {isExpanded && (
+                                                <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+                                                    <div className="flex justify-end mb-4">
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setAdminInputGuruId(guru.id);
+                                                                setAdminLocation("");
+                                                                setAdminPhotoData(null);
+                                                            }}
+                                                            className="text-[10px] font-black text-white bg-[#5b51d8] hover:bg-indigo-700 px-3 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-2 uppercase tracking-widest"
+                                                        >
+                                                            <Icon name="fa-solid fa-user-plus" /> Input Absen Manual
+                                                        </button>
+                                                    </div>
+
+                                                    {logs.length === 0 ? (
+                                                        <p className="text-sm text-slate-400 italic text-center py-4 font-medium">Belum ada riwayat bimbingan.</p>
+                                                    ) : (
+                                                        <ul className="space-y-3">
+                                                            {logs.slice().reverse().map((log, i) => (
+                                                                <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-indigo-200 transition-colors">
+                                                                    <div 
+                                                                        className="w-full sm:w-24 h-32 sm:h-24 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center relative group cursor-pointer"
+                                                                        onClick={() => log.photo && setZoomedPhoto(log.photo)}
+                                                                    >
+                                                                        {log.photo ? (
+                                                                            <>
+                                                                                <img src={log.photo} alt="Bukti" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <Icon name="fa-solid fa-magnifying-glass-plus" className="text-white text-xl" />
+                                                                                </div>
+                                                                            </>
+                                                                        ) : (
+                                                                            <Icon name="fa-solid fa-image" className="text-slate-300 text-2xl" />
+                                                                        )}
+                                                                        {log.isAdminInput && (
+                                                                            <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
+                                                                        )}
+                                                                    </div>
+                                                                    
+                                                                    <div className="flex flex-col justify-between flex-grow text-left">
+                                                                        <div>
+                                                                            <div className="flex justify-between items-start mb-1 border-b border-slate-100 pb-2">
+                                                                                <div className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                                                                                    <Icon name="fa-regular fa-calendar-check" className="text-emerald-500" />
+                                                                                    {safeDate(log.timestamp)}
+                                                                                </div>
+                                                                                <span className="text-slate-400 text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded shadow-sm">{safeTime(log.timestamp)}</span>
+                                                                            </div>
+                                                                            <div className="text-xs text-slate-600 font-medium mt-2 flex flex-col gap-1.5">
+                                                                                <span className="flex items-start gap-2">
+                                                                                    <Icon name="fa-solid fa-location-dot" className="text-rose-500 mt-0.5 shrink-0" /> 
+                                                                                    <span className="leading-relaxed">{log.location || 'Lokasi tidak dicantumkan'}</span>
+                                                                                </span>
+                                                                                {log.isAdminInput && (
+                                                                                    <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 w-fit px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest mt-1">
+                                                                                        <Icon name="fa-solid fa-user-shield" className="mr-1" /> Diinput Koord.
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="mt-3 text-right">
+                                                                            <button 
+                                                                                onClick={() => handleDeleteLog(guru.id, log.id || log.timestamp)}
+                                                                                className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors"
+                                                                            >
+                                                                                <Icon name="fa-solid fa-trash-can" className="mr-1" /> Batalkan Absen Ini
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Tampilan Khusus Guru
+            const myLogs = attendanceData[appUser.id]?.logs || [];
+            const count = myLogs.length;
+            const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
+
+            return (
+                <div className="space-y-6 animate-in fade-in pb-24">
+                    
+                    {zoomedPhoto && (
+                        <div className="fixed inset-0 bg-slate-950/95 z-[200] flex flex-col items-center justify-center p-4 animate-in fade-in" onClick={() => setZoomedPhoto(null)}>
+                            <button className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-rose-500 rounded-full text-white flex items-center justify-center transition-colors" onClick={() => setZoomedPhoto(null)}>
+                                <Icon name="fa-solid fa-xmark" className="text-2xl" />
+                            </button>
+                            <img src={zoomedPhoto} alt="Zoomed Bukti" className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" onClick={(e) => e.stopPropagation()} />
+                        </div>
+                    )}
+
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 text-center">
+                        <h2 className="text-2xl font-black text-slate-800 mb-2">Presensi Kehadiran Pembimbing</h2>
+                        <p className="text-sm text-slate-500 mb-8 font-medium">Wajib diisi setiap selesai melaksanakan bimbingan sebagai bukti administrasi vakasi.</p>
+                        
+                        {!showForm ? (
+                            <button 
+                                onClick={() => setShowForm(true)}
+                                className="w-full max-w-sm h-16 rounded-2xl shadow-lg mx-auto flex items-center justify-center transition-all bg-gradient-to-r from-indigo-600 to-[#5b51d8] text-white hover:scale-105 active:scale-95 cursor-pointer pulse-active"
+                            >
+                                <Icon name="fa-solid fa-fingerprint" className="text-2xl mr-3" />
+                                <span className="font-black tracking-widest uppercase text-sm">Isi Kehadiran / Absen</span>
+                            </button>
+                        ) : (
+                            <div className="max-w-md mx-auto bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left animate-in slide-in-from-top-4 shadow-sm">
+                                <h4 className="font-black text-indigo-700 mb-4 flex items-center gap-2 border-b border-indigo-100 pb-3"><Icon name="fa-solid fa-camera-retro" /> Form Bukti Kehadiran</h4>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Bimbingan</label>
+                                        <input 
+                                            type="date" 
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700 shadow-sm"
+                                            value={selectedDate}
+                                            onChange={e => setSelectedDate(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi Pembimbingan</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Contoh: Lab IPA - Termodinamika" 
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium shadow-sm"
+                                            value={location}
+                                            onChange={e => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Selfie / Suasana)</label>
+                                        <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={(e) => handleImageUpload(e, setPhotoData)} className="hidden" />
+                                        
+                                        <div className="flex gap-3 items-center">
+                                            <button 
+                                                onClick={() => fileInputRef.current.click()}
+                                                className="flex-1 bg-white border-2 border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors shadow-sm"
+                                            >
+                                                <Icon name="fa-solid fa-camera" /> Ambil / Pilih Foto
+                                            </button>
+                                            
+                                            {photoData && (
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group cursor-pointer" onClick={() => setZoomedPhoto(photoData)}>
+                                                    <img src={photoData} alt="Preview" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Icon name="fa-solid fa-magnifying-glass-plus" className="text-white" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
+                                        <button 
+                                            onClick={() => {setShowForm(false); setPhotoData(null); setLocation(""); setSelectedDate(getLocalYYYYMMDD());}}
+                                            className="flex-1 bg-white border border-slate-300 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button 
+                                            onClick={handleAbsen}
+                                            disabled={isSubmitting || !location || !photoData}
+                                            className={`flex-1 font-bold py-3 rounded-xl text-xs uppercase tracking-widest transition-all ${isSubmitting || !location || !photoData ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/30'}`}
+                                        >
+                                            {isSubmitting ? 'Mengirim...' : 'Kirim Absen'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-slate-800 text-lg">Progres Target Bimbingan</h3>
+                            <span className="font-black text-indigo-600 text-xl">{count} <span className="text-sm text-slate-400">/ {TARGET_PERTEMUAN}</span></span>
+                        </div>
+                        <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner mb-2">
+                            <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">{pct}% Tercapai dari Target Sekolah</p>
+
+                        <div className="mt-8 text-left">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Riwayat Kehadiran Bapak/Ibu</h4>
+                            {myLogs.length === 0 ? (
+                                <p className="text-sm text-slate-400 italic text-center py-6 font-medium">Belum ada riwayat mengajar tercatat.</p>
+                            ) : (
+                                <ul className="space-y-3">
+                                    {myLogs.slice().reverse().map((log, i) => (
+                                        <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden hover:border-indigo-200 transition-colors">
+                                            <div 
+                                                className="w-full sm:w-20 h-32 sm:h-20 bg-slate-200 rounded-lg overflow-hidden shrink-0 border border-slate-300 relative group cursor-pointer"
+                                                onClick={() => log.photo && setZoomedPhoto(log.photo)}
+                                            >
+                                                {log.photo ? (
+                                                    <>
+                                                        <img src={log.photo} alt="Bukti" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Icon name="fa-solid fa-magnifying-glass-plus" className="text-white" />
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center"><Icon name="fa-solid fa-image" className="text-slate-400 text-2xl" /></div>
+                                                )}
+                                                {log.isAdminInput && (
+                                                    <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col justify-between flex-grow">
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-1 border-b border-slate-200 pb-2">
+                                                        <div className="font-bold text-slate-700 text-sm flex items-center gap-1.5">
+                                                            <Icon name="fa-regular fa-calendar-check" className="text-emerald-500" />
+                                                            {safeDate(log.timestamp)}
+                                                        </div>
+                                                        <span className="text-slate-400 text-[10px] font-black">{safeTime(log.timestamp)}</span>
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-1.5 leading-relaxed">
+                                                        <span className="flex items-start gap-2">
+                                                            <Icon name="fa-solid fa-location-dot" className="text-rose-500 mt-0.5 shrink-0" /> 
+                                                            <span className="leading-relaxed">{log.location || 'Lokasi tidak dicantumkan'}</span>
+                                                        </span>
+                                                        {log.isAdminInput && (
+                                                            <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 w-fit px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest mt-1">
+                                                                <Icon name="fa-solid fa-user-shield" className="mr-1" /> Diinput Koord.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 text-right z-10">
+                                                    <button 
+                                                        onClick={() => handleDeleteLog(appUser.id, log.id || log.timestamp)}
+                                                        className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded border border-rose-100 transition-colors shadow-sm"
+                                                    >
+                                                        <Icon name="fa-solid fa-xmark" className="mr-1" /> Hapus / Batal
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
         // KOMPONEN: CEKLIS & LOGBOOK
         // ==========================================
         const TopicCard = ({ student, topic, currentData, onSave, canEdit }) => {
           const [isExpanded, setIsExpanded] = useState(false);
-          const status = currentData?.status || currentData || 'belum';
+          
+          let initialStatus = 'belum';
+          if (currentData && typeof currentData === 'object') {
+              initialStatus = currentData.status || 'belum';
+          } else if (currentData && typeof currentData === 'string') {
+              initialStatus = currentData;
+          }
+
+          const status = initialStatus;
           const [score, setScore] = useState(currentData?.score || '');
           const [duration, setDuration] = useState(currentData?.duration || '');
           const [notes, setNotes] = useState(currentData?.notes || '');
@@ -1286,7 +1394,7 @@
             <div className={`p-4 bg-white rounded-lg border transition-all ${isExpanded ? 'border-indigo-600 shadow-md' : 'border-slate-200'}`}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-start gap-3 flex-grow text-left">
-                  <Icon name="fa-solid fa-book-bookmark text-indigo-400 mt-1 shrink-0" />
+                  <Icon name="fa-solid fa-book-bookmark" className="text-indigo-400 mt-1 shrink-0" />
                   <div>
                     <div className="text-sm font-bold text-slate-700">{topic.title}</div>
                   </div>
@@ -1307,7 +1415,7 @@
                     </button>
                   ))}
                   <button onClick={() => setIsExpanded(!isExpanded)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all ${isExpanded || hasNotes ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-500 border-slate-200'}`}>
-                    <Icon name="fa-regular fa-comment-dots mr-1" /> Logbook
+                    <Icon name="fa-regular fa-comment-dots" className="mr-1" /> Logbook
                   </button>
                 </div>
               </div>
@@ -1339,23 +1447,37 @@
           );
         };
 
-        const ChecklistView = ({ progressData, activeField, appUser, onOverrideStatus, resetSignal }) => {
+        const ChecklistView = ({ progressData, activeField, appUser, onOverrideStatus, resetSignal, checklistTargetId, setChecklistTargetId }) => {
             const [selectedId, setSelectedId] = useState(null);
             const [search, setSearch] = useState("");
             const [hideAman, setHideAman] = useState(false);
 
-            // Menutup detail siswa otomatis saat tombol filter di klik dari Header
+            // Buka checklist otomatis jika mendapat instruksi dari dashboard
             useEffect(() => {
-                setSelectedId(null);
-                setHideAman(false);
-            }, [activeField, resetSignal]);
+                if (checklistTargetId) {
+                    setSelectedId(checklistTargetId);
+                    setChecklistTargetId(null);
+                }
+            }, [checklistTargetId, setChecklistTargetId]);
+
+            // Reset tampilan ke daftar siswa HANYA jika bukan dari instruksi Jump Dashboard
+            useEffect(() => {
+                if (!checklistTargetId) {
+                    setSelectedId(null);
+                    setHideAman(false);
+                }
+            }, [resetSignal]); 
 
             const filtered = DELEGASI.filter(s => (activeField === 'ALL' || s.field === activeField) && s.name.toLowerCase().includes(search.toLowerCase()));
 
             if (selectedId) {
                 const s = DELEGASI.find(x => x.id === selectedId);
                 const p = progressData[selectedId] || {};
-                const syllabus = hideAman ? SYLLABUS_DB[s.field].filter(t => (p[t.id]?.status || p[t.id]) !== 'aman') : SYLLABUS_DB[s.field];
+                const syllabus = hideAman ? SYLLABUS_DB[s.field].filter(t => {
+                    const tData = p[t.id];
+                    const stat = typeof tData === 'object' ? tData.status : tData;
+                    return stat !== 'aman';
+                }) : SYLLABUS_DB[s.field];
                 
                 const canEdit = appUser.role === 'admin' || (appUser.role === 'guru' && appUser.field === s.field);
 
@@ -1379,14 +1501,14 @@
 
                         {!canEdit && (
                             <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6 text-xs font-bold flex items-center gap-3">
-                                <Icon name="fa-solid fa-eye text-lg text-amber-500" />
+                                <Icon name="fa-solid fa-eye" className="text-lg text-amber-500" />
                                 Mode Baca: Bapak/Ibu hanya bisa melihat progres karena siswa ini berada di bidang {s.field}.
                             </div>
                         )}
 
                         <div className="space-y-4">
                             {syllabus.length === 0 ? (
-                                <div className="text-center py-10 text-slate-400 font-bold text-sm"><Icon name="fa-solid fa-check-double text-4xl mb-3 text-emerald-400 block mx-auto" /> Semua materi sudah berstatus Aman!</div>
+                                <div className="text-center py-10 text-slate-400 font-bold text-sm"><Icon name="fa-solid fa-check-double" className="text-4xl mb-3 text-emerald-400 block mx-auto" /> Semua materi sudah berstatus Aman!</div>
                             ) : (
                                 syllabus.map(t => <TopicCard key={t.id} student={s} topic={t} currentData={p[t.id]} canEdit={canEdit} onSave={async (sid, tid, d) => await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'progress', sid), { ...progressData[sid], [tid]: d })} />)
                             )}
@@ -1406,7 +1528,7 @@
                             <button key={s.id} onClick={() => setSelectedId(s.id)} className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-[#5b51d8] text-left transition-all group shadow-sm">
                                 <div className="flex justify-between items-start mb-3">
                                     <span className={`text-white text-[9px] px-2.5 py-1 rounded font-black uppercase tracking-widest ${FIELDS.find(f => f.id === s.field).color}`}>{s.field}</span>
-                                    <Icon name="fa-solid fa-chevron-right text-slate-200 group-hover:text-[#5b51d8] transition-all" />
+                                    <Icon name="fa-solid fa-chevron-right" className="text-slate-200 group-hover:text-[#5b51d8] transition-all" />
                                 </div>
                                 <div className="font-bold text-slate-800 text-sm group-hover:text-[#5b51d8]">{s.name}</div>
                             </button>
@@ -1425,15 +1547,17 @@
               const p = progressData[s.id] || {};
               const studentIssues = [];
               
-              Object.keys(p).forEach(tid => {
-                if (p[tid]?.notes && p[tid].notes.trim() !== '') {
-                  studentIssues.push({
-                    topicId: tid,
-                    data: p[tid],
-                    title: SYLLABUS_DB[s.field]?.find(x => x.id === tid)?.title || `Materi ${tid}`
+              if(p && typeof p === 'object') {
+                  Object.keys(p).forEach(tid => {
+                    if (p[tid]?.notes && p[tid].notes.trim() !== '') {
+                      studentIssues.push({
+                        topicId: tid,
+                        data: p[tid],
+                        title: SYLLABUS_DB[s.field]?.find(x => x.id === tid)?.title || `Materi ${tid}`
+                      });
+                    }
                   });
-                }
-              });
+              }
 
               if (studentIssues.length > 0) {
                 studentIssues.sort((a,b) => new Date(b.data.updatedAt) - new Date(a.data.updatedAt));
@@ -1455,7 +1579,7 @@
             <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm pb-24">
               <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
                   <div className="flex items-center gap-3">
-                      <Icon name="fa-regular fa-comments text-2xl text-indigo-600" />
+                      <Icon name="fa-regular fa-comments" className="text-2xl text-indigo-600" />
                       <h3 className="font-black text-slate-800 text-xl tracking-tight">Inbox Kendala Pembelajaran</h3>
                   </div>
                   <div className="hidden sm:block bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest">
@@ -1487,7 +1611,7 @@
                                         <span className="text-[10px] font-bold bg-rose-100 text-rose-600 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm whitespace-nowrap">
                                             {group.issues.length} Kendala
                                         </span>
-                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-400 transition-transform`} />
+                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}`} className="text-slate-400 transition-transform" />
                                     </div>
                                 </button>
 
@@ -1498,7 +1622,7 @@
                                                 <div className="flex justify-between items-start mb-2 gap-4">
                                                     <div className="text-xs font-black text-[#5b51d8] leading-tight">{iss.title}</div>
                                                     <span className="text-slate-400 text-[9px] font-bold uppercase tracking-widest shrink-0 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
-                                                        {new Date(iss.data.updatedAt).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}
+                                                        {safeShortDate(iss.data.updatedAt)}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm italic text-slate-600 leading-relaxed font-medium">"{iss.data.notes}"</p>
@@ -1521,7 +1645,7 @@
           return (
             <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm pb-24">
               <div className="flex items-center gap-3 border-b border-slate-100 pb-6 mb-6">
-                  <Icon name="fa-solid fa-trophy text-2xl text-[#5b51d8]" />
+                  <Icon name="fa-solid fa-trophy" className="text-2xl text-[#5b51d8]" />
                   <h3 className="font-black text-slate-800 text-xl tracking-tight">Papan Peringkat Delegasi (Leaderboard)</h3>
               </div>
               <div className="space-y-3">
@@ -1542,7 +1666,7 @@
                         <div className="flex items-center gap-4 sm:gap-6 shrink-0 ml-2">
                             <div className="flex flex-col items-end">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Durasi</span>
-                                <span className="text-xs sm:text-sm font-bold text-slate-600 flex items-center gap-1.5"><Icon name="fa-regular fa-clock text-slate-400" /> {s.totalDuration} Jam</span>
+                                <span className="text-xs sm:text-sm font-bold text-slate-600 flex items-center gap-1.5"><Icon name="fa-regular fa-clock" className="text-slate-400" /> {s.totalDuration} Jam</span>
                             </div>
                             <div className="flex flex-col items-end w-16 sm:w-24">
                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Rata-Rata Skor</span>
@@ -1559,7 +1683,7 @@
         const DownloadsView = ({ showAlert }) => (
             <div className="bg-white p-4 md:p-6 rounded-2xl border space-y-6 shadow-sm pb-20">
                 <div className="flex items-center gap-3 border-b pb-4">
-                  <Icon name="fa-solid fa-cloud-arrow-down text-2xl text-indigo-600" />
+                  <Icon name="fa-solid fa-cloud-arrow-down" className="text-2xl text-indigo-600" />
                   <h3 className="font-black text-slate-800 text-xl tracking-tight">Unduhan & Referensi</h3>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1572,7 +1696,7 @@
                       { t: "Strategi OSN (YouTube)", i: "fa-brands fa-youtube text-red-500", s: "Link" }
                     ].map((d, i) => (
                         <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-white transition-all cursor-pointer group text-left shadow-sm" onClick={() => showAlert("Fitur unduhan file nyata akan segera diaktifkan!")}>
-                            <Icon name={`fa-solid ${d.i} text-3xl mb-4 block`} />
+                            <Icon name={`fa-solid ${d.i}`} className="text-3xl mb-4 block" />
                             <div className="text-xs md:text-sm font-bold text-slate-800 group-hover:text-indigo-600">{d.t}</div>
                             <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{d.s}</div>
                         </div>
@@ -1592,11 +1716,38 @@
           const [loading, setLoading] = useState(true);
           const [modalConfig, setModalConfig] = useState(null); 
           const [overrideStudentId, setOverrideStudentId] = useState(null);
+          const [checklistTargetId, setChecklistTargetId] = useState(null); // State baru untuk melompat ke siswa
           
-          const [activeTab, setActiveTab] = useState('dashboard');
+          // FITUR BARU: ROUTING BERBASIS LINK (HASH ROUTER)
+          const [activeTab, setActiveTab] = useState(() => {
+              const hash = window.location.hash.replace('#', '');
+              const validTabs = ['dashboard', 'checklist', 'attendance', 'issues', 'leaderboard', 'downloads'];
+              return validTabs.includes(hash) ? hash : 'dashboard';
+          });
+
+          // Sinkronisasi: Saat tab berubah, update link di URL browser
+          useEffect(() => {
+              if (appUser) {
+                  window.location.hash = activeTab;
+              }
+          }, [activeTab, appUser]);
+
+          // Sinkronisasi: Saat tombol Back/Forward di HP ditekan, ubah tampilan tab
+          useEffect(() => {
+              const handleHashChange = () => {
+                  const hash = window.location.hash.replace('#', '');
+                  const validTabs = ['dashboard', 'checklist', 'attendance', 'issues', 'leaderboard', 'downloads'];
+                  if (validTabs.includes(hash)) {
+                      setActiveTab(hash);
+                  }
+              };
+              window.addEventListener('hashchange', handleHashChange);
+              return () => window.removeEventListener('hashchange', handleHashChange);
+          }, []);
+
           const [activeField, setActiveField] = useState('ALL');
           const [sidebarOpen, setSidebarOpen] = useState(false);
-          const [resetSignal, setResetSignal] = useState(0); // Signal untuk reset filter di Checklist
+          const [resetSignal, setResetSignal] = useState(0); 
 
           const showAlert = (message) => setModalConfig({ type: 'alert', message });
           const showConfirm = (message, onConfirm) => setModalConfig({ type: 'confirm', message, onConfirm });
@@ -1617,9 +1768,23 @@
               }
           };
 
+          // FUNGSI BARU: Untuk melompat langsung ke halaman detail siswa dari dashboard
+          const handleJumpToProgress = (studentId) => {
+              const student = DELEGASI.find(s => s.id === studentId);
+              if (student) {
+                  setActiveField(student.field); // Set filter bidang otomatis
+                  setChecklistTargetId(studentId); // Kirim ID target
+                  setActiveTab('checklist'); // Pindah tab
+              }
+          };
+
           useEffect(() => {
-            signInAnonymously(auth).catch(console.error);
-            return onAuthStateChanged(auth, setFirebaseUser);
+            if(auth) {
+                signInAnonymously(auth).catch(console.error);
+                return onAuthStateChanged(auth, setFirebaseUser);
+            } else {
+                setLoading(false); 
+            }
           }, []);
 
           useEffect(() => {
@@ -1655,31 +1820,32 @@
               
               <CustomModal config={modalConfig} onClose={() => setModalConfig(null)} />
 
+              {/* MODAL KENDALI STATUS MANUAL (HANYA MUNCUL JIKA ADMIN MENGKLIK BADGE STATUS) */}
               {overrideStudentId && (
                   <div className="fixed inset-0 bg-slate-900/70 z-[60] flex items-center justify-center p-4 animate-in fade-in">
                       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative border border-slate-100">
                           <button onClick={() => setOverrideStudentId(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
-                              <Icon name="fa-solid fa-xmark text-lg" />
+                              <Icon name="fa-solid fa-xmark" className="text-lg" />
                           </button>
                           <h3 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
-                              <Icon name="fa-solid fa-user-shield text-[#5b51d8]" /> Kendali Status Manual
+                              <Icon name="fa-solid fa-user-shield" className="text-[#5b51d8]" /> Kendali Status Manual
                           </h3>
                           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b pb-3">
                               Siswa: <span className="text-[#5b51d8]">{DELEGASI.find(d => d.id === overrideStudentId)?.name}</span>
                           </p>
                           <div className="flex flex-col gap-3">
                               <button onClick={() => handleOverrideStatus('Auto')} className="p-3.5 rounded-xl font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center justify-between group shadow-sm transition-all">
-                                  <span><Icon name="fa-solid fa-robot mr-2 text-[#5b51d8]" /> Biarkan Menilai (Otomatis)</span>
-                                  <Icon name="fa-solid fa-rotate-left text-slate-400 group-hover:text-slate-600" />
+                                  <span><Icon name="fa-solid fa-robot" className="mr-2 text-[#5b51d8]" /> Biarkan AI Menilai (Otomatis)</span>
+                                  <Icon name="fa-solid fa-rotate-left" className="text-slate-400 group-hover:text-slate-600" />
                               </button>
                               <button onClick={() => handleOverrideStatus('Aktif')} className="p-3.5 rounded-xl font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-between shadow-sm transition-all">
-                                  <span><Icon name="fa-solid fa-check-circle mr-2" /> Paksa Status: Aktif</span>
+                                  <span><Icon name="fa-solid fa-check-circle" className="mr-2" /> Paksa Status: Aktif</span>
                               </button>
                               <button onClick={() => handleOverrideStatus('Stagnan')} className="p-3.5 rounded-xl font-bold bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 flex items-center justify-between shadow-sm transition-all">
-                                  <span><Icon name="fa-solid fa-question-circle mr-2" /> Paksa Status: Stagnan</span>
+                                  <span><Icon name="fa-solid fa-question-circle" className="mr-2" /> Paksa Status: Stagnan</span>
                               </button>
                               <button onClick={() => handleOverrideStatus('Tdk Ada')} className="p-3.5 rounded-xl font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 flex items-center justify-between shadow-sm transition-all">
-                                  <span><Icon name="fa-solid fa-xmark-circle mr-2" /> Paksa Status: Tdk Ada</span>
+                                  <span><Icon name="fa-solid fa-xmark-circle" className="mr-2" /> Paksa Status: Tdk Ada</span>
                               </button>
                           </div>
                       </div>
@@ -1705,25 +1871,25 @@
                 <nav className="flex-grow mt-8 px-4 space-y-2 overflow-y-auto scrollbar-hide pb-32">
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4">Menu Utama</div>
                   <button onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                    <Icon name="fa-solid fa-table-cells-large text-lg" /> <span className="font-bold text-sm">Dashboard</span>
+                    <Icon name="fa-solid fa-table-cells-large" className="text-lg" /> <span className="font-bold text-sm">Dashboard</span>
                   </button>
                   <button onClick={() => { setActiveTab('checklist'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'checklist' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                    <Icon name="fa-solid fa-square-check text-lg" /> <span className="font-bold text-sm">Update Progres</span>
+                    <Icon name="fa-solid fa-square-check" className="text-lg" /> <span className="font-bold text-sm">Update Progres</span>
                   </button>
                   <button onClick={() => { setActiveTab('attendance'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'attendance' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                    <Icon name="fa-solid fa-fingerprint text-lg" /> <span className="font-bold text-sm">Absensi Guru</span>
+                    <Icon name="fa-solid fa-fingerprint" className="text-lg" /> <span className="font-bold text-sm">Absensi Guru</span>
                   </button>
                   
                   <div className="pt-8">
                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4">Analisis & Referensi</div>
                      <button onClick={() => { setActiveTab('issues'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'issues' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                       <Icon name="fa-solid fa-comments text-lg" /> <span className="font-bold text-sm">Pusat Kendala</span>
+                       <Icon name="fa-solid fa-comments" className="text-lg" /> <span className="font-bold text-sm">Pusat Kendala</span>
                      </button>
                      <button onClick={() => { setActiveTab('leaderboard'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'leaderboard' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                       <Icon name="fa-solid fa-trophy text-lg" /> <span className="font-bold text-sm">Peringkat Siswa</span>
+                       <Icon name="fa-solid fa-trophy" className="text-lg" /> <span className="font-bold text-sm">Peringkat Siswa</span>
                      </button>
                      <button onClick={() => { setActiveTab('downloads'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'downloads' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
-                       <Icon name="fa-solid fa-cloud-arrow-down text-lg" /> <span className="font-bold text-sm">Pusat Unduhan</span>
+                       <Icon name="fa-solid fa-cloud-arrow-down" className="text-lg" /> <span className="font-bold text-sm">Pusat Unduhan</span>
                      </button>
                   </div>
                 </nav>
@@ -1792,10 +1958,10 @@
                 </header>
 
                 <main className="max-w-[1400px] mx-auto pb-24 md:pb-12">
-                    {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
-                    {activeTab === 'checklist' && <ChecklistView appUser={appUser} progressData={progressData} activeField={activeField} onOverrideStatus={(s) => setOverrideStudentId(s.id)} resetSignal={resetSignal} />}
-                    {activeTab === 'issues' && <IssuesView progressData={progressData} activeField={activeField} />}
-                    {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
+                    {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} onJumpToStudent={handleJumpToProgress} />}
+                    {activeTab === 'checklist' && <ChecklistView appUser={appUser} progressData={progressData} activeField={activeField} onOverrideStatus={(s) => setOverrideStudentId(s.id)} resetSignal={resetSignal} checklistTargetId={checklistTargetId} setChecklistTargetId={setChecklistTargetId} />}
+                    {activeTab === 'issues' && <IssuesView progressData={progressData} />}
+                    {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
                     {activeTab === 'attendance' && <AttendanceView appUser={appUser} attendanceData={attendanceData} setAttendanceData={setAttendanceData} showAlert={showAlert} showConfirm={showConfirm} />}
                     {activeTab === 'downloads' && <DownloadsView showAlert={showAlert} />}
                 </main>
