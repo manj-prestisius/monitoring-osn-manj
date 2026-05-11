@@ -72,14 +72,35 @@
 
         const TARGET_PERTEMUAN = 18;
 
+        // ==========================================
+        // DATA MASTER USERS (DIPERBARUI DAFTAR NAMA ASLI)
+        // ==========================================
         const APP_USERS = [
-            { id: 'admin',     name: 'Al Basyir',          role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
-            { id: 'guru_mat',  name: 'Guru Matematika',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
-            { id: 'guru_bio',  name: 'Guru Biologi',       role: 'guru',  field: 'BIO', pin: '1234',   title: 'Pembimbing BIO' },
-            { id: 'guru_fis',  name: 'Guru Fisika',        role: 'guru',  field: 'FIS', pin: '1234',   title: 'Pembimbing FIS' },
-            { id: 'guru_kim',  name: 'Guru Kimia',         role: 'guru',  field: 'KIM', pin: '1234',   title: 'Pembimbing KIM' },
-            { id: 'guru_eko',  name: 'Guru Ekonomi',       role: 'guru',  field: 'EKO', pin: '1234',   title: 'Pembimbing EKO' },
-            { id: 'guru_geo',  name: 'Guru Geografi',      role: 'guru',  field: 'GEO', pin: '1234',   title: 'Pembimbing GEO' },
+            // AKUN KOORDINATOR (ADMIN)
+            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
+            
+            // PEMBIMBING MATEMATIKA
+            { id: 'mat_1',     name: 'Nabila Khodijah A.R.',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
+            { id: 'mat_2',     name: 'Anonymous',               role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
+            
+            // PEMBIMBING FISIKA
+            { id: 'fis_1',     name: 'M. Lutfi Fauzi',          role: 'guru',  field: 'FIS', pin: '1234',   title: 'Pembimbing FIS' },
+            { id: 'fis_2',     name: 'Robbie Nur Rachman',      role: 'guru',  field: 'FIS', pin: '1234',   title: 'Pembimbing FIS' },
+            
+            // PEMBIMBING KIMIA
+            { id: 'kim_1',     name: 'Toha Mansur',             role: 'guru',  field: 'KIM', pin: '1234',   title: 'Pembimbing KIM' },
+            { id: 'kim_2',     name: 'Robiatus Sholihah',       role: 'guru',  field: 'KIM', pin: '1234',   title: 'Pembimbing KIM' },
+            
+            // PEMBIMBING BIOLOGI
+            { id: 'bio_1',     name: 'Eva Mayasari',            role: 'guru',  field: 'BIO', pin: '1234',   title: 'Pembimbing BIO' },
+            { id: 'bio_2',     name: 'Abd. Lathif Al Basyir',   role: 'guru',  field: 'BIO', pin: '1234',   title: 'Pembimbing BIO' },
+            
+            // PEMBIMBING EKONOMI
+            { id: 'eko_1',     name: 'Abd. Hamid',              role: 'guru',  field: 'EKO', pin: '1234',   title: 'Pembimbing EKO' },
+            { id: 'eko_2',     name: 'Restu Yuniar Aggraini',   role: 'guru',  field: 'EKO', pin: '1234',   title: 'Pembimbing EKO' },
+            
+            // PEMBIMBING GEOGRAFI
+            { id: 'geo_1',     name: 'Sudar',                   role: 'guru',  field: 'GEO', pin: '1234',   title: 'Pembimbing GEO' },
         ];
 
         const DELEGASI = [
@@ -108,22 +129,208 @@
         ];
 
         const SYLLABUS_DB = {
-          MAT: Array.from({length: 30}, (_, i) => ({ id: `m${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Matematika Hari Ke-${i+1}` })),
-          BIO: Array.from({length: 30}, (_, i) => ({ id: `b${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Biologi Hari Ke-${i+1}` })),
-          FIS: Array.from({length: 30}, (_, i) => ({ id: `f${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Fisika Hari Ke-${i+1}` })),
-          KIM: Array.from({length: 30}, (_, i) => ({ id: `k${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Kimia Hari Ke-${i+1}` })),
-          EKO: Array.from({length: 30}, (_, i) => ({ id: `e${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Ekonomi Hari Ke-${i+1}` })),
-          GEO: Array.from({length: 30}, (_, i) => ({ id: `g${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Geografi Hari Ke-${i+1}` })),
+          MAT: [
+            { id: 'm1', cat: 'Aljabar', title: 'Day 1: Ketaksamaan Rataan (AM-GM-HM-QM)' },
+            { id: 'm2', cat: 'Aljabar', title: 'Day 2: Ketaksamaan Cauchy-Schwarz & Jensen' },
+            { id: 'm3', cat: 'Aljabar', title: 'Day 3: Barisan Pola & Induksi Matematika' },
+            { id: 'm4', cat: 'Aljabar', title: 'Day 4: Barisan Rekursif Linear (Fibonacci, Lucas)' },
+            { id: 'm5', cat: 'Aljabar', title: 'Day 5: Algoritma Pembagian & Teorema Sisa/Faktor' },
+            { id: 'm6', cat: 'Aljabar', title: 'Day 6: Akar Polinom & Teorema Vieta' },
+            { id: 'm7', cat: 'Aljabar', title: 'Day 7: Persamaan Fungsi Klasik (Cauchy, Jensen)' },
+            { id: 'm8', cat: 'Aljabar', title: 'Day 8: Sifat Fungsi (Injektif, Surjektif, Konveks, Konkaf)' },
+            { id: 'm9', cat: 'Geometri', title: 'Day 9: Angle Chasing & Segiempat Tali Busur' },
+            { id: 'm10', cat: 'Geometri', title: 'Day 10: Garis Berat, Garis Sumbu, & Lingkaran Luar' },
+            { id: 'm11', cat: 'Geometri', title: 'Day 11: Garis Tinggi & Garis Bagi (Dalam/Luar)' },
+            { id: 'm12', cat: 'Geometri', title: 'Day 12: Lingkaran Singgung & Isogonal Konjugat' },
+            { id: 'm13', cat: 'Geometri', title: 'Day 13: Titik Kuasa & Sumbu Radikal' },
+            { id: 'm14', cat: 'Geometri', title: 'Day 14: Teorema Ptolemy & Garis Simpson' },
+            { id: 'm15', cat: 'Kombinatorika', title: 'Day 15: Aturan Penjumlahan, Perkalian, & Permutasi' },
+            { id: 'm16', cat: 'Kombinatorika', title: 'Day 16: Permutasi Siklis, Unsur Sama, & String' },
+            { id: 'm17', cat: 'Kombinatorika', title: 'Day 17: Kombinasi, Distribusi, & Partisi' },
+            { id: 'm18', cat: 'Kombinatorika', title: 'Day 18: Teorema De Moivre & Stirling Number' },
+            { id: 'm19', cat: 'Kombinatorika', title: 'Day 19: Prinsip Injeksi, Bijeksi, & Pigeonhole' },
+            { id: 'm20', cat: 'Kombinatorika', title: 'Day 20: Binom Newton, Multinom, & Segitiga Pascal' },
+            { id: 'm21', cat: 'Kombinatorika', title: 'Day 21: Peluang Kejadian (Lepas, Bebas, Bersyarat)' },
+            { id: 'm22', cat: 'Kombinatorika', title: 'Day 22: Aturan Bayes, Sebaran Peluang, & Himpunan' },
+            { id: 'm23', cat: 'Teori Bilangan', title: 'Day 23: Dasar Keterbagian & Algoritma Pembagian' },
+            { id: 'm24', cat: 'Teori Bilangan', title: 'Day 24: FPB, KPK, & Bilangan Prima' },
+            { id: 'm25', cat: 'Teori Bilangan', title: 'Day 25: Persamaan Diophantine Sederhana' },
+            { id: 'm26', cat: 'Teori Bilangan', title: 'Day 26: Kongruensi Modulo & Residu Lengkap' },
+            { id: 'm27', cat: 'Teori Bilangan', title: 'Day 27: Teorema Wilson & Teorema Fermat' },
+            { id: 'm28', cat: 'Teori Bilangan', title: 'Day 28: Teorema Euler, Order, & Akar Primitif' },
+            { id: 'm29', cat: 'Teori Bilangan', title: 'Day 29: Persamaan Kongruensi Linier & Sisa China' },
+            { id: 'm30', cat: 'Teori Bilangan', title: 'Day 30: Kongruensi Kuadrat & Residu Kuadratik' },
+          ],
+          BIO: [
+            { id: 'b1', cat: 'Biologi Sel & Molekuler', title: 'Day 1: Komponen Kimia Sel & Makromolekul' },
+            { id: 'b2', cat: 'Biologi Sel & Molekuler', title: 'Day 2: Struktur & Fungsi Spesifik Organel' },
+            { id: 'b3', cat: 'Biologi Sel & Molekuler', title: 'Day 3: Transport Membran & Kinetika Enzim' },
+            { id: 'b4', cat: 'Biologi Sel & Molekuler', title: 'Day 4: Metabolisme Respirasi Seluler' },
+            { id: 'b5', cat: 'Biologi Sel & Molekuler', title: 'Day 5: Metabolisme Fotosintesis (C3, C4, CAM)' },
+            { id: 'b6', cat: 'Biologi Sel & Molekuler', title: 'Day 6: Regulasi Siklus Sel & Pembelahan' },
+            { id: 'b7', cat: 'Fisiologi Tumbuhan', title: 'Day 7: Jaringan & Organ Tumbuhan' },
+            { id: 'b8', cat: 'Fisiologi Tumbuhan', title: 'Day 8: Transportasi Xilem & Translokasi Floem' },
+            { id: 'b9', cat: 'Fisiologi Tumbuhan', title: 'Day 9: Pertumbuhan, Perkembangan, & Hormon Tumbuhan' },
+            { id: 'b10', cat: 'Fisiologi Hewan', title: 'Day 10: Sistem Pencernaan & Nutrisi' },
+            { id: 'b11', cat: 'Fisiologi Hewan', title: 'Day 11: Sistem Sirkulasi & Pernapasan' },
+            { id: 'b12', cat: 'Fisiologi Hewan', title: 'Day 12: Sistem Ekskresi & Osmoregulasi' },
+            { id: 'b13', cat: 'Fisiologi Hewan', title: 'Day 13: Sistem Saraf & Sistem Indera' },
+            { id: 'b14', cat: 'Fisiologi Hewan', title: 'Day 14: Sistem Endokrin (Hormon)' },
+            { id: 'b15', cat: 'Fisiologi Hewan', title: 'Day 15: Sistem Imunitas (Kekebalan)' },
+            { id: 'b16', cat: 'Fisiologi Hewan', title: 'Day 16: Sistem Reproduksi & Embriologi' },
+            { id: 'b17', cat: 'Genetika & Evolusi', title: 'Day 17: Genetika Mendelian & Pola Pewarisan' },
+            { id: 'b18', cat: 'Genetika & Evolusi', title: 'Day 18: Penyimpangan Semu Mendel & Pautan Gen' },
+            { id: 'b19', cat: 'Genetika & Evolusi', title: 'Day 19: Replikasi DNA, Transkripsi, & Translasi' },
+            { id: 'b20', cat: 'Genetika & Evolusi', title: 'Day 20: Regulasi Ekspresi Gen & Mutasi' },
+            { id: 'b21', cat: 'Genetika & Evolusi', title: 'Day 21: Teknologi DNA Rekombinan & Plasmid' },
+            { id: 'b22', cat: 'Genetika & Evolusi', title: 'Day 22: Genetika Populasi (Hardy-Weinberg)' },
+            { id: 'b23', cat: 'Genetika & Evolusi', title: 'Day 23: Mekanisme Evolusi, Spesiasi, & Filogeni' },
+            { id: 'b24', cat: 'Ekologi & Etologi', title: 'Day 24: Dinamika Populasi & Kurva Kelangsungan Hidup' },
+            { id: 'b25', cat: 'Ekologi & Etologi', title: 'Day 25: Interaksi Komunitas & Suksesi' },
+            { id: 'b26', cat: 'Ekologi & Etologi', title: 'Day 26: Aliran Energi & Siklus Biogeokimia' },
+            { id: 'b27', cat: 'Ekologi & Etologi', title: 'Day 27: Ekosistem, Bioma & Permasalahan Lingkungan' },
+            { id: 'b28', cat: 'Ekologi & Etologi', title: 'Day 28: Perilaku Bawaan (Innate) & Ritme Biologis' },
+            { id: 'b29', cat: 'Ekologi & Etologi', title: 'Day 29: Perilaku Pembelajaran & Komunikasi Hewan' },
+            { id: 'b30', cat: 'Biosistematika', title: 'Day 30: Klasifikasi Kehidupan & Taksonomi 5 Kingdom' },
+          ],
+          FIS: [
+            { id: 'f1', cat: 'Mekanika', title: 'Day 1: Analisis Vektor & Kinematika 1 Dimensi' },
+            { id: 'f2', cat: 'Mekanika', title: 'Day 2: Kinematika 2 Dimensi (Gerak Parabola & Melingkar)' },
+            { id: 'f3', cat: 'Mekanika', title: 'Day 3: Statika Partikel & Gaya Gesek' },
+            { id: 'f4', cat: 'Mekanika', title: 'Day 4: Dinamika Hukum Newton' },
+            { id: 'f5', cat: 'Mekanika', title: 'Day 5: Usaha, Energi Kinetik & Energi Potensial' },
+            { id: 'f6', cat: 'Mekanika', title: 'Day 6: Hukum Kekekalan Energi Mekanik' },
+            { id: 'f7', cat: 'Mekanika', title: 'Day 7: Pusat Massa, Momentum Linier & Impuls' },
+            { id: 'f8', cat: 'Mekanika', title: 'Day 8: Tumbukan & Kekekalan Momentum' },
+            { id: 'f9', cat: 'Mekanika', title: 'Day 9: Momen Inersia & Torsi' },
+            { id: 'f10', cat: 'Mekanika', title: 'Day 10: Dinamika Rotasi & Benda Menggelinding' },
+            { id: 'f11', cat: 'Mekanika', title: 'Day 11: Momentum Sudut & Kekekalan Momentum Sudut' },
+            { id: 'f12', cat: 'Mekanika', title: 'Day 12: Statika Benda Tegar & Kesetimbangan' },
+            { id: 'f13', cat: 'Mekanika', title: 'Day 13: Hukum Gravitasi Universal Newton' },
+            { id: 'f14', cat: 'Mekanika', title: 'Day 14: Hukum Kepler & Orbit Planet' },
+            { id: 'f15', cat: 'Mekanika', title: 'Day 15: Statika Fluida (Tekanan & Archimedes)' },
+            { id: 'f16', cat: 'Mekanika', title: 'Day 16: Dinamika Fluida (Bernoulli & Kontinuitas)' },
+            { id: 'f17', cat: 'Mekanika', title: 'Day 17: Osilasi Harmonik Sederhana (Bandul & Pegas)' },
+            { id: 'f18', cat: 'Gelombang & Optik', title: 'Day 18: Gelombang Mekanik & Efek Doppler' },
+            { id: 'f19', cat: 'Gelombang & Optik', title: 'Day 19: Optik Geometri & Optik Fisis' },
+            { id: 'f20', cat: 'Termodinamika', title: 'Day 20: Suhu, Kalor, Pemuaian & Asas Black' },
+            { id: 'f21', cat: 'Termodinamika', title: 'Day 21: Teori Kinetik Gas & Persamaan Gas Ideal' },
+            { id: 'f22', cat: 'Termodinamika', title: 'Day 22: Hukum Termodinamika 0 & I' },
+            { id: 'f23', cat: 'Termodinamika', title: 'Day 23: Siklus Termodinamika & Hukum II (Entropi)' },
+            { id: 'f24', cat: 'Listrik Magnet', title: 'Day 24: Listrik Statis (Hukum Coulomb & Medan Listrik)' },
+            { id: 'f25', cat: 'Listrik Magnet', title: 'Day 25: Potensial Listrik & Kapasitor' },
+            { id: 'f26', cat: 'Listrik Magnet', title: 'Day 26: Rangkaian Arus Searah (DC) & Hukum Kirchhoff' },
+            { id: 'f27', cat: 'Listrik Magnet', title: 'Day 27: Medan Magnet Statis (Biot-Savart & Ampere)' },
+            { id: 'f28', cat: 'Listrik Magnet', title: 'Day 28: Gaya Lorentz pada Muatan & Kawat' },
+            { id: 'f29', cat: 'Listrik Magnet', title: 'Day 29: Induksi Elektromagnetik (Faraday & Lenz)' },
+            { id: 'f30', cat: 'Fisika Modern', title: 'Day 30: Relativitas Khusus & Fisika Kuantum Dasar' },
+          ],
+          KIM: [
+            { id: 'k1', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 1: Nukleon, Isotop & Reaksi Nuklir' },
+            { id: 'k2', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 2: Bilangan Kuantum, Orbital & Aturan Pauli/Hund' },
+            { id: 'k3', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 3: Tren Sifat Periodik Unsur & Reaktivitas' },
+            { id: 'k4', cat: 'Ikatan Kimia', title: 'Day 4: Ikatan Kovalen, Ionik, Logam & Gaya Antarmolekul' },
+            { id: 'k5', cat: 'Ikatan Kimia', title: 'Day 5: Struktur Molekul, Teori Lewis & VSEPR' },
+            { id: 'k6', cat: 'Stoikiometri', title: 'Day 6: Konsep Mol, Konstanta Avogadro & Rumus Empiris' },
+            { id: 'k7', cat: 'Stoikiometri', title: 'Day 7: Perhitungan Stoikiometri Larutan & Persamaan Gas' },
+            { id: 'k8', cat: 'Kesetimbangan Kimia', title: 'Day 8: Kesetimbangan Kimia, Kp, Kc & Prinsip Le Chatelier' },
+            { id: 'k9', cat: 'Kesetimbangan Kimia', title: 'Day 9: Teori Asam-Basa Arrhenius & Bronsted-Lowry' },
+            { id: 'k10', cat: 'Kesetimbangan Kimia', title: 'Day 10: Perhitungan pH Larutan Asam, Basa & Hidrolisis' },
+            { id: 'k11', cat: 'Kesetimbangan Kimia', title: 'Day 11: pH Larutan Penyangga (Buffer) & Pengenceran' },
+            { id: 'k12', cat: 'Kesetimbangan Kimia', title: 'Day 12: Kelarutan & Konstanta Hasil Kali Kelarutan (Ksp)' },
+            { id: 'k13', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 13: Gaya Gerak Listrik & Persamaan Nernst' },
+            { id: 'k14', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 14: Hukum Faraday & Stoikiometri Elektrolisis' },
+            { id: 'k15', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 15: Kurva Titrasi Asam-Basa & Pilihan Indikator' },
+            { id: 'k16', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 16: Titrasi Redoks (Permanganometri & Iodometri)' },
+            { id: 'k17', cat: 'Kinetika Kimia', title: 'Day 17: Orde Reaksi, Konstanta Laju & Reaksi Elementer' },
+            { id: 'k18', cat: 'Kinetika Kimia', title: 'Day 18: Persamaan Arrhenius, Energi Aktivasi & Katalis' },
+            { id: 'k19', cat: 'Termodinamika Kimia', title: 'Day 19: Hukum Hess, Kalorimetri & Siklus Born-Haber' },
+            { id: 'k20', cat: 'Termodinamika Kimia', title: 'Day 20: Entropi, Energi Gibbs & Arah Perubahan Spontan' },
+            { id: 'k21', cat: 'Kimia Anorganik', title: 'Day 21: Reaksi Unsur Blok-S (Air, Oksigen, Halogen)' },
+            { id: 'k22', cat: 'Kimia Anorganik', title: 'Day 22: Senyawa Oksida Karbon, Nitrogen & Sulfur' },
+            { id: 'k23', cat: 'Kimia Anorganik', title: 'Day 23: Bilangan Oksidasi Logam Transisi & Warna Ion' },
+            { id: 'k24', cat: 'Kimia Anorganik', title: 'Day 24: Reaksi Kompleksasi & Konstanta Pembentukan' },
+            { id: 'k25', cat: 'Kimia Organik', title: 'Day 25: Hibridisasi, Aromatisitas & Isomerisme Organik' },
+            { id: 'k26', cat: 'Kimia Organik', title: 'Day 26: Stereokimia (E/Z, Kiralitas R/S, Proyeksi Fisher)' },
+            { id: 'k27', cat: 'Kimia Organik', title: 'Day 27: Adisi Elektrofilik & Substitusi Aromatik' },
+            { id: 'k28', cat: 'Kimia Organik', title: 'Day 28: Substitusi Nukleofilik (SN1/SN2) & Eliminasi (E1/E2)' },
+            { id: 'k29', cat: 'Kimia Organik', title: 'Day 29: Reaksi Oksidasi-Reduksi Gugus Fungsi Organik' },
+            { id: 'k30', cat: 'Kimia Organik', title: 'Day 30: Polimerisasi, Asam Amino, Karbohidrat & Lipid' },
+          ],
+          EKO: [
+            { id: 'e1', cat: 'Microeconomics', title: 'Day 1: Competitive Markets (Demand, Supply, Equilibrium)' },
+            { id: 'e2', cat: 'Microeconomics', title: 'Day 2: Elasticities (Price, Cross, Income)' },
+            { id: 'e3', cat: 'Microeconomics', title: 'Day 3: Consumer\'s Choice & Utility' },
+            { id: 'e4', cat: 'Microeconomics', title: 'Day 4: Firm\'s Behavior & Cost Structure' },
+            { id: 'e5', cat: 'Microeconomics', title: 'Day 5: Non-Competitive Markets (Monopoly & Oligopoly)' },
+            { id: 'e6', cat: 'Microeconomics', title: 'Day 6: Monopolistic Competition & Game Theory (Nash Eq)' },
+            { id: 'e7', cat: 'Microeconomics', title: 'Day 7: Market Failures (Externalities & Public Goods)' },
+            { id: 'e8', cat: 'Microeconomics', title: 'Day 8: Asymmetric Information & Innovation' },
+            { id: 'e9', cat: 'Macroeconomics', title: 'Day 9: Measuring Income (GDP/GNP/Institutions)' },
+            { id: 'e10', cat: 'Macroeconomics', title: 'Day 10: Inflation, Unemployment & Labor Market' },
+            { id: 'e11', cat: 'Macroeconomics', title: 'Day 11: Fluctuations & Crises' },
+            { id: 'e12', cat: 'Macroeconomics', title: 'Day 12: Technology & Long-Run Growth' },
+            { id: 'e13', cat: 'Macroeconomics', title: 'Day 13: Inequality & Wealth Distribution' },
+            { id: 'e14', cat: 'Monetary Economics', title: 'Day 14: Currencies & Currency Unions' },
+            { id: 'e15', cat: 'Monetary Economics', title: 'Day 15: Exchange Rates, Specialization & Gains from Trade' },
+            { id: 'e16', cat: 'Monetary Economics', title: 'Day 16: Protectionism, Winners and Losers' },
+            { id: 'e17', cat: 'Monetary Economics', title: 'Day 17: Money & Monetary Policy' },
+            { id: 'e18', cat: 'Monetary Economics', title: 'Day 18: Fiscal Policy & Government Budget' },
+            { id: 'e19', cat: 'Monetary Economics', title: 'Day 19: Economics of Environment & Sustainable Development' },
+            { id: 'e20', cat: 'Finance & Banking', title: 'Day 20: Banks, Money and Credit Market' },
+            { id: 'e21', cat: 'Finance & Banking', title: 'Day 21: Setting Financial Goals & Decision Making' },
+            { id: 'e22', cat: 'Finance & Banking', title: 'Day 22: Basic Probability and Risk vs Return' },
+            { id: 'e23', cat: 'Finance & Banking', title: 'Day 23: Risk Diversification' },
+            { id: 'e24', cat: 'Finance & Banking', title: 'Day 24: Compound Interest & Return Rates Analysis' },
+            { id: 'e25', cat: 'Finance & Banking', title: 'Day 25: Borrowing Basics & Mortgage Borrowing' },
+            { id: 'e26', cat: 'Finance & Banking', title: 'Day 26: Charge It Right & Building Credit History' },
+            { id: 'e27', cat: 'Finance & Banking', title: 'Day 27: Personal Taxes & Planning for Retirement' },
+            { id: 'e28', cat: 'Finance & Banking', title: 'Day 28: Making the Most of Income & Spending/Saving Plan' },
+            { id: 'e29', cat: 'Finance & Banking', title: 'Day 29: Protecting Money, Identity & Ability to Recognise Fraud' },
+            { id: 'e30', cat: 'Finance & Banking', title: 'Day 30: Digital Assets, Cryptocurrency & Biases in Finances' },
+          ],
+          GEO: [
+            { id: 'g1', cat: 'Iklim & Atmosfer', title: 'Day 1: Pengantar Cuaca & Sirkulasi Atmosfer' },
+            { id: 'g2', cat: 'Iklim & Atmosfer', title: 'Day 2: Dinamika Perubahan Iklim & Fenomena Cuaca Ekstrem' },
+            { id: 'g3', cat: 'Kebencanaan', title: 'Day 3: Jenis Bencana & Siklus Manajemen Bencana' },
+            { id: 'g4', cat: 'Kebencanaan', title: 'Day 4: Mitigasi, Penyesuaian Ruang & Adaptasi Lingkungan' },
+            { id: 'g5', cat: 'Sumber Daya', title: 'Day 5: Klasifikasi & Manajemen Sumber Daya Geografis' },
+            { id: 'g6', cat: 'Geografi Lingkungan', title: 'Day 6: Pembangunan Berkelanjutan & Ekologi Ruang' },
+            { id: 'g7', cat: 'Geografi Lingkungan', title: 'Day 7: Pencemaran Lingkungan & Degradasi Lahan' },
+            { id: 'g8', cat: 'Geologi & Geomorfologi', title: 'Day 8: Struktur Bumi, Mineral & Siklus Pembentukan Batuan' },
+            { id: 'g9', cat: 'Geologi & Geomorfologi', title: 'Day 9: Tektonik Lempeng & Dampak Vulkanisme/Seisme' },
+            { id: 'g10', cat: 'Geologi & Geomorfologi', title: 'Day 10: Geomorfologi Eksogen, Pelapukan & Erosi Bentang Alam' },
+            { id: 'g11', cat: 'Geologi & Geomorfologi', title: 'Day 11: Geografi Tanah, Formasi Pedogenesis & Penggunaan Lahan' },
+            { id: 'g12', cat: 'Hidrosfer & Oseanografi', title: 'Day 12: Siklus Hidrologi, Dinamika Airtanah & DAS' },
+            { id: 'g13', cat: 'Hidrosfer & Oseanografi', title: 'Day 13: Oseanografi Fisik, Arus Laut & Morfologi Dasar Laut' },
+            { id: 'g14', cat: 'Geografi Manusia', title: 'Day 14: Geografi Pertanian & Permasalahan Ketahanan Pangan' },
+            { id: 'g15', cat: 'Kependudukan', title: 'Day 15: Dinamika Kependudukan, Fertilitas, Mortalitas & Migrasi' },
+            { id: 'g16', cat: 'Kependudukan', title: 'Day 16: Struktur Demografi, Piramida Penduduk & Proyeksi' },
+            { id: 'g17', cat: 'Geografi Ekonomi', title: 'Day 17: Sektor Ekonomi Basis & Teori Lokasi Industri' },
+            { id: 'g18', cat: 'Geografi Ekonomi', title: 'Day 18: Jaringan Perdagangan Internasional & Efek Globalisasi' },
+            { id: 'g19', cat: 'Pembangunan Spasial', title: 'Day 19: Indikator Pembangunan & Teori Pertumbuhan Regional' },
+            { id: 'g20', cat: 'Pembangunan Spasial', title: 'Day 20: Ketimpangan Spasial & Pusat Pertumbuhan Wilayah' },
+            { id: 'g21', cat: 'Geografi Kota', title: 'Day 21: Teori Struktur Ruang Kota, Sub-urbanisasi & Urbanisasi' },
+            { id: 'g22', cat: 'Geografi Kota', title: 'Day 22: Perencanaan Tata Ruang Kota & Manajemen Permukiman' },
+            { id: 'g23', cat: 'Geografi Budaya', title: 'Day 23: Pariwisata Spasial, Manajemen Destinasi & Ekowisata' },
+            { id: 'g24', cat: 'Geografi Budaya', title: 'Day 24: Geografi Budaya, Persebaran Etnolinguistik & Identitas' },
+            { id: 'g25', cat: 'Kartografi', title: 'Day 25: Kartografi Dasar, Proyeksi Peta & Skala Distorsi' },
+            { id: 'g26', cat: 'Kartografi', title: 'Day 26: Analisis Simbolisasi Peta Topografi & Kontur' },
+            { id: 'g27', cat: 'Pemetaan Spasial', title: 'Day 27: Penginderaan Jauh, Citra Satelit & Foto Udara' },
+            { id: 'g28', cat: 'Pemetaan Spasial', title: 'Day 28: Sistem Informasi Geografis (SIG), Vektor & Raster' },
+            { id: 'g29', cat: 'Pemetaan Spasial', title: 'Day 29: Analisis Spasial Komputasional (Overlay & Buffering)' },
+            { id: 'g30', cat: 'Pemetaan Spasial', title: 'Day 30: Integrasi Analisis Geospasial untuk Pemecahan Kasus' },
+          ],
         };
 
         const FIELDS = [
           { id: 'ALL', label: 'Semua Bidang', color: 'bg-slate-800' },
-          { id: 'MAT', label: 'OSN Matematika', color: 'bg-blue-600', hex: '#2563eb' },
-          { id: 'BIO', label: 'OSN Biologi', color: 'bg-green-600', hex: '#16a34a' },
-          { id: 'FIS', label: 'OSN Fisika', color: 'bg-purple-600', hex: '#9333ea' },
-          { id: 'KIM', label: 'OSN Kimia', color: 'bg-pink-600', hex: '#db2777' },
-          { id: 'EKO', label: 'OSN Ekonomi', color: 'bg-amber-600', hex: '#d97706' },
-          { id: 'GEO', label: 'OSN Geografi', color: 'bg-teal-600', hex: '#0d9488' },
+          { id: 'MAT', label: 'Matematika', color: 'bg-blue-600', hex: '#2563eb' },
+          { id: 'BIO', label: 'Biologi', color: 'bg-green-600', hex: '#16a34a' },
+          { id: 'FIS', label: 'Fisika', color: 'bg-purple-600', hex: '#9333ea' },
+          { id: 'KIM', label: 'Kimia', color: 'bg-pink-600', hex: '#db2777' },
+          { id: 'EKO', label: 'Ekonomi', color: 'bg-amber-600', hex: '#d97706' },
+          { id: 'GEO', label: 'Geografi', color: 'bg-teal-600', hex: '#0d9488' },
         ];
 
         const STATUS_TYPES = [
@@ -154,7 +361,7 @@
         };
 
         // ==========================================
-        // CUSTOM MODAL COMPONENT (PENGGANTI ALERT BROWSER)
+        // CUSTOM MODAL COMPONENT (PENGGANTI ALERT)
         // ==========================================
         const CustomModal = ({ config, onClose }) => {
             if (!config) return null;
@@ -254,7 +461,7 @@
         };
 
         // ==========================================
-        // KOMPONEN: ABSENSI GURU (DENGAN FOTO & EDIT)
+        // KOMPONEN: ABSENSI GURU
         // ==========================================
         const AttendanceView = ({ appUser, attendanceData, setAttendanceData, showAlert, showConfirm }) => {
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,13 +470,11 @@
             const [photoData, setPhotoData] = useState(null);
             const fileInputRef = useRef(null);
 
-            // STATE & REF UNTUK ADMIN INPUT MANUAL
             const [adminInputGuruId, setAdminInputGuruId] = useState(null);
             const [adminLocation, setAdminLocation] = useState("");
             const [adminPhotoData, setAdminPhotoData] = useState(null);
             const adminFileInputRef = useRef(null);
 
-            // Fitur Kompresi Gambar untuk menjaga database tetap ringan
             const handleImageUpload = (e, setPhotoState) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -279,7 +484,7 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 500; // Kompresi kuat ke ukuran kecil
+                        const MAX_WIDTH = 500; 
                         const scaleSize = MAX_WIDTH / img.width;
                         canvas.width = MAX_WIDTH;
                         canvas.height = img.height * scaleSize;
@@ -287,7 +492,7 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Kualitas 60%
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                         setPhotoState(dataUrl);
                     };
                     img.src = event.target.result;
@@ -295,7 +500,6 @@
                 reader.readAsDataURL(file);
             };
 
-            // Fungsi Absen Oleh Guru (Self Service)
             const handleAbsen = async () => {
                 if (appUser.role !== 'guru') return;
                 if (!location.trim()) { showAlert("Mohon isi lokasi/materi pembimbingan."); return; }
@@ -326,7 +530,6 @@
                 setIsSubmitting(false);
             };
 
-            // Fungsi Absen Manual Oleh Koordinator (Admin Override)
             const handleAdminAbsen = async () => {
                 if (!adminLocation.trim()) { showAlert("Lokasi & Materi wajib diisi."); return; }
                 
@@ -338,8 +541,8 @@
                     id: Date.now().toString(),
                     timestamp: now.toISOString(),
                     location: adminLocation,
-                    photo: adminPhotoData || "", // Foto opsional jika diinput admin
-                    isAdminInput: true // Penanda khusus inputan koordinator
+                    photo: adminPhotoData || "", 
+                    isAdminInput: true 
                 };
                 
                 try {
@@ -368,7 +571,6 @@
                 });
             };
 
-            // Tampilan Khusus Koordinator (Admin)
             if (appUser.role === 'admin') {
                 const guruUsers = APP_USERS.filter(u => u.role === 'guru');
                 const [expandedAdminAtt, setExpandedAdminAtt] = useState({});
@@ -379,8 +581,6 @@
                 
                 return (
                     <div className="space-y-6 animate-in fade-in pb-20">
-                        
-                        {/* MODAL INPUT MANUAL ADMIN */}
                         {adminInputGuruId && (
                             <div className="fixed inset-0 bg-slate-900/70 z-[60] flex items-center justify-center p-4 animate-in fade-in">
                                 <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -442,9 +642,9 @@
                                 <Icon name="fa-solid fa-users-viewfinder text-2xl text-indigo-600" />
                                 <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Kontrol Vakasi & Kehadiran</h3>
                             </div>
-                            <p className="text-sm text-slate-500 mb-6 font-medium">Klik pada kartu nama guru untuk melihat rincian riwayat bimbingan, atau menginput kehadiran mereka secara manual.</p>
                             
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Tambahan Filter Sederhana jika sudah banyak guru */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 {guruUsers.map(guru => {
                                     const logs = attendanceData[guru.id]?.logs || [];
                                     const count = logs.length;
@@ -454,14 +654,13 @@
                                     
                                     return (
                                         <div key={guru.id} className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:border-indigo-300">
-                                            {/* Header Card - Clickable */}
                                             <button 
                                                 onClick={() => toggleAdminAtt(guru.id)}
                                                 className="w-full p-5 flex flex-col items-start bg-white hover:bg-slate-50 transition-colors text-left"
                                             >
                                                 <div className="flex justify-between items-start w-full mb-3">
                                                     <div>
-                                                        <div className="font-bold text-slate-800 text-lg">{guru.name}</div>
+                                                        <div className="font-bold text-slate-800 text-base md:text-lg">{guru.name}</div>
                                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{guru.title}</div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
@@ -478,7 +677,6 @@
                                                 <div className="w-full text-right mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{pct}% Tercapai</div>
                                             </button>
 
-                                            {/* Rincian Riwayat Admin */}
                                             {isExpanded && (
                                                 <div className="p-4 border-t border-slate-200 bg-slate-50/50">
                                                     <div className="flex justify-end mb-4">
@@ -501,7 +699,6 @@
                                                         <ul className="space-y-3">
                                                             {logs.slice().reverse().map((log, i) => (
                                                                 <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
-                                                                    {/* Foto Thumbnail */}
                                                                     <div className="w-full sm:w-24 h-24 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center relative">
                                                                         {log.photo ? (
                                                                             <img src={log.photo} alt="Bukti" className="w-full h-full object-cover" />
@@ -512,7 +709,6 @@
                                                                             <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
                                                                         )}
                                                                     </div>
-                                                                    {/* Info Detail */}
                                                                     <div className="flex flex-col justify-between flex-grow text-left">
                                                                         <div>
                                                                             <div className="flex justify-between items-start mb-1">
@@ -531,7 +727,6 @@
                                                                                 )}
                                                                             </div>
                                                                         </div>
-                                                                        {/* Tombol Hapus Admin */}
                                                                         <div className="mt-3 text-right">
                                                                             <button 
                                                                                 onClick={() => handleDeleteLog(guru.id, log.id || log.timestamp)}
@@ -666,6 +861,9 @@
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center"><Icon name="fa-solid fa-image text-slate-400 text-2xl" /></div>
                                                 )}
+                                                {log.isAdminInput && (
+                                                    <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
+                                                )}
                                             </div>
                                             <div className="flex flex-col justify-between flex-grow">
                                                 <div>
@@ -768,7 +966,6 @@
               {/* CARD ANALISIS VISUAL */}
               <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div className="flex flex-col lg:flex-row gap-12">
-                    {/* Distribusi Penguasaan (Kiri) */}
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-8 text-[#5b51d8]">
                             <Icon name="fa-solid fa-chart-pie text-xl" />
@@ -789,8 +986,6 @@
                             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-rose-500"></div> Belum Dikuasai ({pctBelum}%)</div>
                         </div>
                     </div>
-
-                    {/* Grafik Batang Skor (Kanan) */}
                     <div className="flex-1">
                         <div className="mb-4">
                             <h4 className="text-sm font-bold text-slate-700 mb-1">Rata-rata Skor Latihan per Bidang</h4>
@@ -798,17 +993,12 @@
                         </div>
                         <div className="relative h-48 mt-10">
                             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
-                                <div className="chart-grid-line"></div>
-                                <div className="chart-grid-line"></div>
-                                <div className="chart-grid-line"></div>
-                                <div className="chart-grid-line" style={{ borderTop: '2px solid #e2e8f0' }}></div>
+                                <div className="chart-grid-line"></div><div className="chart-grid-line"></div><div className="chart-grid-line"></div><div className="chart-grid-line" style={{ borderTop: '2px solid #e2e8f0' }}></div>
                             </div>
                             <div className="relative h-full flex items-end justify-between px-2 gap-1.5 md:gap-3">
                                 {fieldAverages.map(f => (
                                     <div key={f.id} className="flex flex-col items-center flex-1 group">
-                                        <div className="w-full max-w-[35px] rounded-t-sm transition-all duration-1000 shadow-sm"
-                                             style={{ height: `${Math.max(f.avgScore, 4)}%`, backgroundColor: f.hex }}>
-                                        </div>
+                                        <div className="w-full max-w-[35px] rounded-t-sm transition-all duration-1000 shadow-sm" style={{ height: `${Math.max(f.avgScore, 4)}%`, backgroundColor: f.hex }}></div>
                                         <span className="text-[10px] font-black text-slate-400 mt-3 uppercase tracking-tighter">{f.labelShort}</span>
                                     </div>
                                 ))}
@@ -818,7 +1008,6 @@
                 </div>
               </div>
 
-              {/* TIGA KARTU STATUS (BAWAH) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-[6px] border-l-emerald-500 flex flex-col justify-between relative overflow-hidden">
                       <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Aman</div>
@@ -1088,24 +1277,24 @@
           const ranked = DELEGASI.map(s => ({ ...s, ...getStudentStats(progressData[s.id] || {}) }))
                                 .sort((a, b) => b.avgScore - a.avgScore || b.totalDuration - a.totalDuration);
           return (
-            <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm pb-24">
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm pb-24">
               <div className="flex items-center gap-3 border-b border-slate-100 pb-6 mb-6">
                   <Icon name="fa-solid fa-trophy text-2xl text-amber-500" />
                   <h3 className="font-black text-slate-800 text-xl tracking-tight">Papan Peringkat</h3>
               </div>
               <div className="space-y-3">
                 {ranked.map((s, i) => (
-                    <div key={s.id} className={`flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all ${i < 3 ? 'bg-indigo-50/40 border-indigo-100' : 'bg-white border-slate-100'}`}>
-                        <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{i+1}</span>
+                    <div key={s.id} className={`flex items-center justify-between p-4 md:p-5 rounded-xl border transition-all ${i < 3 ? 'bg-indigo-50/40 border-indigo-100' : 'bg-white border-slate-100'}`}>
+                        <div className="flex items-center gap-4 overflow-hidden">
+                            <span className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black shadow-md shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{i+1}</span>
                             <div className="overflow-hidden text-left">
-                                <div className="text-xs md:text-sm font-bold text-slate-800 truncate">{s.name}</div>
-                                <div className="text-[8px] md:text-[9px] text-slate-400 uppercase font-black tracking-tighter">{s.field} • {s.totalDuration} JAM BELAJAR</div>
+                                <div className="text-sm font-bold text-slate-800 truncate">{s.name}</div>
+                                <div className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">{s.field} • {s.totalDuration} JAM BELAJAR</div>
                             </div>
                         </div>
                         <div className="flex flex-col items-end shrink-0 ml-2">
-                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg Skor</span>
-                            <span className="text-base md:text-lg font-black text-indigo-600">{s.avgScore}</span>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Avg Skor</span>
+                            <span className="text-xl font-black text-indigo-600">{s.avgScore}</span>
                         </div>
                     </div>
                 ))}
@@ -1143,30 +1332,25 @@
         // APP MAIN WRAPPER
         // ==========================================
         const App = () => {
-          // Authentication & Data State
           const [firebaseUser, setFirebaseUser] = useState(null);
-          const [appUser, setAppUser] = useState(null); // User profil dari login screen
+          const [appUser, setAppUser] = useState(null); 
           const [progressData, setProgressData] = useState({});
           const [attendanceData, setAttendanceData] = useState({});
           const [loading, setLoading] = useState(true);
-          const [modalConfig, setModalConfig] = useState(null); // <-- TAMBAHAN UNTUK MODAL
+          const [modalConfig, setModalConfig] = useState(null); 
           
-          // UI State
           const [activeTab, setActiveTab] = useState('dashboard');
           const [activeField, setActiveField] = useState('ALL');
           const [sidebarOpen, setSidebarOpen] = useState(false);
 
-          // Helper untuk memanggil Popup cantik kita
           const showAlert = (message) => setModalConfig({ type: 'alert', message });
           const showConfirm = (message, onConfirm) => setModalConfig({ type: 'confirm', message, onConfirm });
 
-          // 1. Firebase Anonymous Auth Initializer
           useEffect(() => {
             signInAnonymously(auth).catch(console.error);
             return onAuthStateChanged(auth, setFirebaseUser);
           }, []);
 
-          // 2. Data Listeners (Progress & Attendance)
           useEffect(() => {
             if (!firebaseUser) return;
             
@@ -1184,7 +1368,6 @@
             return () => { unsubProgress(); unsubAttendance(); };
           }, [firebaseUser]);
 
-          // Tampilkan loading spinner jika belum connect
           if (loading) return (
             <div className="min-h-screen flex flex-col items-center justify-center text-slate-400 bg-white p-6">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4 shadow-lg shadow-indigo-100"></div>
@@ -1192,22 +1375,17 @@
             </div>
           );
 
-          // Tampilkan Login Screen jika belum login
           if (!appUser) {
               return <LoginScreen onLogin={setAppUser} />;
           }
 
-          // Main App UI (Setelah Login)
           return (
             <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50">
               
-              {/* MODAL / ALERT CUSTOM KITA MUNCUL DI SINI */}
               <CustomModal config={modalConfig} onClose={() => setModalConfig(null)} />
 
-              {/* BACKDROP MOBILE */}
               {sidebarOpen && <div className="fixed inset-0 bg-slate-950/80 z-40 md:hidden animate-in fade-in" onClick={() => setSidebarOpen(false)}></div>}
 
-              {/* SIDEBAR */}
               <div className={`fixed inset-y-0 left-0 w-64 bg-[#0f172a] text-white flex flex-col z-50 sidebar-transition transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 shadow-2xl`}>
                 <div className="p-8 flex flex-col items-start gap-4 border-b border-white/5">
                   <div className="flex items-center gap-3">
@@ -1242,6 +1420,9 @@
                      <button onClick={() => { setActiveTab('leaderboard'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'leaderboard' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
                        <Icon name="fa-solid fa-trophy text-lg" /> <span className="font-bold text-sm">Peringkat Siswa</span>
                      </button>
+                     <button onClick={() => { setActiveTab('downloads'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'downloads' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                       <Icon name="fa-solid fa-cloud-arrow-down text-lg" /> <span className="font-bold text-sm">Pusat Unduhan</span>
+                     </button>
                   </div>
                 </nav>
 
@@ -1259,7 +1440,6 @@
                 </div>
               </div>
 
-              {/* MOBILE TOP BAR */}
               <div className="md:hidden bg-[#0f172a] text-white p-4 sticky top-0 z-40 flex items-center justify-between shadow-lg border-b border-white/5">
                  <div className="flex items-center gap-3 px-4 py-3">
                   <button onClick={() => setSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center bg-white/10 rounded-lg border border-white/10 shrink-0"><Icon name="fa-solid fa-bars" size={16} /></button>
@@ -1277,15 +1457,14 @@
                 </div>
               </div>
 
-              {/* MAIN CONTENT */}
               <div className="flex-grow ml-0 md:ml-64 p-4 md:p-12 w-full min-w-0">
-                <div className="h-14 md:hidden"></div> {/* Spacer Mobile Header */}
+                <div className="h-14 md:hidden"></div>
                 
                 <header className="mb-10 flex flex-col gap-6">
                   <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
                     <div className="text-left">
                       <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none uppercase">
-                        {activeTab === 'dashboard' ? 'PUSAT KENDALI PROGRES' : activeTab === 'checklist' ? 'PEMBARUAN SILABUS' : activeTab === 'issues' ? 'MONITORING KENDALA' : activeTab === 'leaderboard' ? 'PERINGKAT DELEGASI' : 'ABSENSI GURU'}
+                        {activeTab === 'dashboard' ? 'PUSAT KENDALI PROGRES' : activeTab === 'checklist' ? 'PEMBARUAN SILABUS' : activeTab === 'issues' ? 'MONITORING KENDALA' : activeTab === 'leaderboard' ? 'PERINGKAT DELEGASI' : activeTab === 'attendance' ? 'ABSENSI GURU' : 'PUSAT REFERENSI'}
                       </h1>
                       <p className="text-slate-500 font-bold text-xs md:text-sm mt-3 uppercase tracking-widest opacity-80">Masa Persiapan OSN-K 2026 • MA Nurul Jadid</p>
                     </div>
@@ -1294,7 +1473,7 @@
                     </div>
                   </div>
 
-                  {activeTab !== 'attendance' && (
+                  {activeTab !== 'attendance' && activeTab !== 'downloads' && (
                   <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
                       <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest pr-2 border-r shrink-0">
                         <Icon name="fa-solid fa-filter" /> Filter
@@ -1318,7 +1497,6 @@
                 </main>
               </div>
 
-              {/* MOBILE BOTTOM NAVIGATION */}
               <div className="md:hidden fixed bottom-0 left-0 w-full bg-slate-900 z-30 border-t border-white/10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
                 <div className="flex items-center justify-around px-1 pt-2 pb-1">
                   {[
