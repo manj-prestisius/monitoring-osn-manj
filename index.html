@@ -80,7 +80,7 @@
         // ==========================================
         const APP_USERS = [
             // AKUN KOORDINATOR (ADMIN)
-            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
+            { id: 'admin',     name: 'Al Basyir (Koordinator)', role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator OSN' },
             
             // PEMBIMBING MATEMATIKA
             { id: 'mat_1',     name: 'Nabila Khodijah A.R.',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
@@ -342,11 +342,44 @@
           { id: 'belum', label: 'Belum Dikuasai', color: 'bg-rose-500', hex: '#ef4444', icon: <Icon name="fa-solid fa-circle-exclamation" size={16} /> },
         ];
 
+        // --- DATA DEFAULT UNDUHAN ---
+        const DEFAULT_DOWNLOADS = [
+          {
+            id: 'cat_1',
+            category: "Dokumen Resmi & Silabus",
+            desc: "Panduan dan regulasi resmi dari Puspresnas Kemendikbud",
+            items: [
+              { id: 'item_1_1', title: "Buku Pedoman OSN 2026", type: "PDF", size: "2.4 MB", icon: "fa-regular fa-file-pdf", color: "text-rose-500", link: "#", btnText: "Download" },
+              { id: 'item_1_2', title: "Silabus Materi Seluruh Bidang", type: "PDF", size: "1.8 MB", icon: "fa-regular fa-file-pdf", color: "text-rose-500", link: "#", btnText: "Download" },
+              { id: 'item_1_3', title: "SOP Pembimbing MA Nurul Jadid", type: "PDF", size: "850 KB", icon: "fa-regular fa-file-lines", color: "text-blue-500", link: "#", btnText: "Download" }
+            ]
+          },
+          {
+            id: 'cat_2',
+            category: "Arsip Bank Soal & Pembahasan",
+            desc: "Kumpulan soal asli OSN Kabupaten, Provinsi, dan Nasional",
+            items: [
+              { id: 'item_2_1', title: "Bank Soal Matematika (2020-2025)", type: "ZIP", size: "15 MB", icon: "fa-solid fa-box-archive", color: "text-amber-500", link: "#", btnText: "Download" },
+              { id: 'item_2_2', title: "Bank Soal IPA (Bio, Fis, Kim)", type: "ZIP", size: "42 MB", icon: "fa-solid fa-box-archive", color: "text-amber-500", link: "#", btnText: "Download" },
+              { id: 'item_2_3', title: "Bank Soal IPS (Eko, Geo)", type: "ZIP", size: "28 MB", icon: "fa-solid fa-box-archive", color: "text-amber-500", link: "#", btnText: "Download" },
+              { id: 'item_2_4', title: "Kunci & Pembahasan Terpadu", type: "PDF", size: "5.5 MB", icon: "fa-regular fa-file-pdf", color: "text-rose-500", link: "#", btnText: "Download" }
+            ]
+          },
+          {
+            id: 'cat_3',
+            category: "Referensi Belajar Digital",
+            desc: "Tautan rekomendasi untuk sesi Akselerasi Digital (Siswa)",
+            items: [
+              { id: 'item_3_1', title: "Olympia Gold Academy (Strategi)", type: "LINK", size: "YouTube", icon: "fa-brands fa-youtube", color: "text-red-500", link: "#", btnText: "Buka Tautan" },
+              { id: 'item_3_2', title: "Simulasi CBT Puspresnas Terpadu", type: "LINK", size: "Website", icon: "fa-solid fa-arrow-up-right-from-square", color: "text-indigo-500", link: "#", btnText: "Buka Tautan" },
+              { id: 'item_3_3', title: "Materi E-book Perpusnas", type: "LINK", size: "Portal", icon: "fa-solid fa-arrow-up-right-from-square", color: "text-indigo-500", link: "#", btnText: "Buka Tautan" }
+            ]
+          }
+        ];
+
         // ==========================================
-        // FUNGSI BANTU (Helper) & VALIDASI AMAN
+        // FUNGSI BANTU (Helper) & VALIDASI NULL
         // ==========================================
-        
-        // PENGAMAN TANGGAL: Fungsi ini anti-crash untuk format tanggal apa pun
         const safeDate = (dateStr) => {
             try {
                 if (!dateStr) return "-";
@@ -374,7 +407,6 @@
             } catch(e) { return "-"; }
         };
 
-        // PENGAMAN GENERATOR TANGGAL YYYY-MM-DD
         const getLocalYYYYMMDD = () => {
             const d = new Date();
             const year = d.getFullYear();
@@ -595,7 +627,7 @@
         };
 
         // ==========================================
-        // KOMPONEN: DASHBOARD (PERSIS SEPERTI DESAIN CLAUDE + HAK VETO)
+        // KOMPONEN: DASHBOARD
         // ==========================================
         const Dashboard = ({ progressData, activeField, appUser, onOverrideStatus, onJumpToStudent }) => {
           const filteredStudents = useMemo(() => {
@@ -853,7 +885,7 @@
         };
 
         // ==========================================
-        // KOMPONEN: ABSENSI GURU (DENGAN FOTO, TANGGAL & ZOOM)
+        // KOMPONEN: ABSENSI GURU
         // ==========================================
         const AttendanceView = ({ appUser, attendanceData, showAlert, showConfirm }) => {
             const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1073,11 +1105,11 @@
                         <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
                             <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
                                 <Icon name="fa-solid fa-users-viewfinder" className="text-2xl text-indigo-600" />
-                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Kontrol Vakasi & Kehadiran</h3>
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Absensi & Kehadiran</h3>
                             </div>
                             <p className="text-sm text-slate-500 mb-6 font-medium">Klik pada kartu nama guru untuk melihat rincian riwayat bimbingan, atau menginput kehadiran mereka secara manual.</p>
                             
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 {guruUsers.map(guru => {
                                     const logs = attendanceData[guru.id]?.logs || [];
                                     const count = logs.length;
@@ -1452,7 +1484,6 @@
             const [search, setSearch] = useState("");
             const [hideAman, setHideAman] = useState(false);
 
-            // Buka checklist otomatis jika mendapat instruksi dari dashboard
             useEffect(() => {
                 if (checklistTargetId) {
                     setSelectedId(checklistTargetId);
@@ -1460,13 +1491,12 @@
                 }
             }, [checklistTargetId, setChecklistTargetId]);
 
-            // Reset tampilan ke daftar siswa HANYA jika bukan dari instruksi Jump Dashboard
             useEffect(() => {
                 if (!checklistTargetId) {
                     setSelectedId(null);
                     setHideAman(false);
                 }
-            }, [resetSignal]); 
+            }, [resetSignal, activeField]); 
 
             const filtered = DELEGASI.filter(s => (activeField === 'ALL' || s.field === activeField) && s.name.toLowerCase().includes(search.toLowerCase()));
 
@@ -1680,30 +1710,242 @@
           );
         };
 
-        const DownloadsView = ({ showAlert }) => (
-            <div className="bg-white p-4 md:p-6 rounded-2xl border space-y-6 shadow-sm pb-20">
-                <div className="flex items-center gap-3 border-b pb-4">
-                  <Icon name="fa-solid fa-cloud-arrow-down" className="text-2xl text-indigo-600" />
-                  <h3 className="font-black text-slate-800 text-xl tracking-tight">Unduhan & Referensi</h3>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {[
-                      { t: "Buku Pedoman OSN 2026", i: "fa-file-pdf text-rose-500", s: "2.4 MB" }, 
-                      { t: "Silabus Seluruh Bidang", i: "fa-file-pdf text-rose-500", s: "1.8 MB" },
-                      { t: "Arsip Soal Matematika", i: "fa-file-zipper text-amber-500", s: "15 MB" }, 
-                      { t: "Arsip Soal IPA (BIO/FIS/KIM)", i: "fa-file-zipper text-amber-500", s: "42 MB" },
-                      { t: "Arsip Soal IPS (EKO/GEO)", i: "fa-file-zipper text-amber-500", s: "28 MB" },
-                      { t: "Strategi OSN (YouTube)", i: "fa-brands fa-youtube text-red-500", s: "Link" }
-                    ].map((d, i) => (
-                        <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-white transition-all cursor-pointer group text-left shadow-sm" onClick={() => showAlert("Fitur unduhan file nyata akan segera diaktifkan!")}>
-                            <Icon name={`fa-solid ${d.i}`} className="text-3xl mb-4 block" />
-                            <div className="text-xs md:text-sm font-bold text-slate-800 group-hover:text-indigo-600">{d.t}</div>
-                            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{d.s}</div>
+        // ==========================================
+        // KOMPONEN: PUSAT UNDUHAN (DINAMIS CMS)
+        // ==========================================
+        const DownloadsView = ({ appUser, downloadsData, setDownloadsData, showAlert, showConfirm, isDemo }) => {
+            const isAdmin = appUser?.role === 'admin';
+            const [formModal, setFormModal] = useState(null); 
+            // format: { type: 'category' | 'item', mode: 'add' | 'edit', data: {}, parentId: null }
+
+            const saveToDb = async (newCategories) => {
+                if (isDemo) {
+                    setDownloadsData(newCategories);
+                    showAlert("Tersimpan (Mode Demo - Data akan hilang jika web direfresh)");
+                    return;
+                }
+                try {
+                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'downloads', 'main'), { categories: newCategories });
+                    showAlert("Data unduhan berhasil diperbarui!");
+                } catch(e) {
+                    console.error(e);
+                    showAlert("Gagal menyimpan ke database.");
+                }
+            };
+
+            const handleDeleteCategory = (catId) => {
+                showConfirm("Yakin ingin menghapus kategori ini beserta seluruh file di dalamnya?", () => {
+                    const newCats = downloadsData.filter(c => c.id !== catId);
+                    saveToDb(newCats);
+                });
+            };
+
+            const handleDeleteItem = (catId, itemId) => {
+                showConfirm("Yakin ingin menghapus file ini?", () => {
+                    const newCats = downloadsData.map(c => {
+                        if (c.id === catId) {
+                            return { ...c, items: c.items.filter(i => i.id !== itemId) };
+                        }
+                        return c;
+                    });
+                    saveToDb(newCats);
+                });
+            };
+
+            // MODAL FORM CMS
+            const CmsModal = () => {
+                if (!formModal) return null;
+                const isCat = formModal.type === 'category';
+
+                // State Kategori
+                const [catName, setCatName] = useState(formModal.data?.category || "");
+                const [catDesc, setCatDesc] = useState(formModal.data?.desc || "");
+
+                // State Item
+                const [title, setTitle] = useState(formModal.data?.title || "");
+                const [type, setType] = useState(formModal.data?.type || "PDF");
+                const [size, setSize] = useState(formModal.data?.size || "");
+                const [link, setLink] = useState(formModal.data?.link || "");
+
+                const handleSave = () => {
+                    if (isCat) {
+                        if (!catName.trim()) { showAlert("Judul kategori wajib diisi."); return; }
+                        let newCats = [...downloadsData];
+                        if (formModal.mode === 'add') {
+                            newCats.push({ id: 'cat_' + Date.now(), category: catName, desc: catDesc, items: [] });
+                        } else {
+                            newCats = newCats.map(c => c.id === formModal.data.id ? { ...c, category: catName, desc: catDesc } : c);
+                        }
+                        saveToDb(newCats);
+                    } else {
+                        if (!title.trim() || !link.trim()) { showAlert("Judul file dan Link URL wajib diisi."); return; }
+                        
+                        let icon = "fa-solid fa-link";
+                        let color = "text-blue-500";
+                        let btnText = "Buka Tautan";
+                        if (type === 'PDF') { icon = "fa-regular fa-file-pdf"; color = "text-rose-500"; btnText = "Download"; }
+                        else if (type === 'ZIP') { icon = "fa-solid fa-box-archive"; color = "text-amber-500"; btnText = "Download"; }
+                        else if (type === 'YouTube') { icon = "fa-brands fa-youtube"; color = "text-red-500"; btnText = "Tonton Video"; }
+                        else if (type === 'DOC' || type === 'DOCX') { icon = "fa-regular fa-file-word"; color = "text-blue-600"; btnText = "Download"; }
+
+                        const newItem = { id: formModal.data?.id || 'item_' + Date.now(), title, type, size, link, icon, color, btnText };
+                        
+                        let newCats = downloadsData.map(c => {
+                            if (c.id === formModal.parentId) {
+                                let newItems = [...c.items];
+                                if (formModal.mode === 'add') newItems.push(newItem);
+                                else newItems = newItems.map(i => i.id === newItem.id ? newItem : i);
+                                return { ...c, items: newItems };
+                            }
+                            return c;
+                        });
+                        saveToDb(newCats);
+                    }
+                    setFormModal(null);
+                };
+
+                return (
+                    <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 animate-in fade-in">
+                        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+                            <button onClick={() => setFormModal(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
+                                <Icon name="fa-solid fa-xmark" className="text-lg" />
+                            </button>
+                            <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                                <Icon name={isCat ? "fa-solid fa-folder-open" : "fa-solid fa-file-arrow-up"} className="text-[#5b51d8]" />
+                                {formModal.mode === 'add' ? 'Tambah' : 'Edit'} {isCat ? 'Kategori' : 'File Unduhan'}
+                            </h3>
+
+                            <div className="space-y-4 text-left">
+                                {isCat ? (
+                                    <>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nama Kategori</label>
+                                            <input type="text" placeholder="Misal: Arsip Soal Fisika" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700" value={catName} onChange={e => setCatName(e.target.value)} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Deskripsi Singkat</label>
+                                            <input type="text" placeholder="Deskripsi pendek..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium" value={catDesc} onChange={e => setCatDesc(e.target.value)} />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Judul File/Tautan</label>
+                                            <input type="text" placeholder="Misal: Soal OSN-K 2024" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700" value={title} onChange={e => setTitle(e.target.value)} />
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="flex-1">
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Jenis/Tipe</label>
+                                                <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700" value={type} onChange={e => setType(e.target.value)}>
+                                                    <option value="PDF">PDF</option>
+                                                    <option value="ZIP">ZIP</option>
+                                                    <option value="DOC">Word (DOC)</option>
+                                                    <option value="YouTube">YouTube</option>
+                                                    <option value="LINK">Link Web</option>
+                                                </select>
+                                            </div>
+                                            <div className="flex-1">
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Info Ukuran</label>
+                                                <input type="text" placeholder="Misal: 2.5 MB" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium" value={size} onChange={e => setSize(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Link Google Drive / URL</label>
+                                            <input type="url" placeholder="https://..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium" value={link} onChange={e => setLink(e.target.value)} />
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
+                                    <button onClick={() => setFormModal(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">Batal</button>
+                                    <button onClick={handleSave} className="flex-1 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-indigo-500/30">Simpan</button>
+                                </div>
+                            </div>
                         </div>
-                    ))}
+                    </div>
+                );
+            };
+
+            return (
+                <div className="animate-in fade-in duration-500 space-y-6">
+                    <CmsModal />
+
+                    {isAdmin && (
+                        <div className="flex justify-end">
+                            <button onClick={() => setFormModal({ type: 'category', mode: 'add', data: null })} className="flex items-center gap-2 bg-[#5b51d8] hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-500/30 transition-all hover:-translate-y-0.5">
+                                <Icon name="fa-solid fa-folder-plus" size={16} /> Tambah Kategori Baru
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex flex-col mb-8 border-b border-slate-100 pb-5">
+                            <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 mb-2">
+                                <Icon name="fa-solid fa-cloud-arrow-down" className="text-indigo-600" size={28} /> Pusat Referensi & Unduhan
+                            </h3>
+                            <p className="text-sm text-slate-500 font-medium">Kumpulan modul, bank soal, dan tautan belajar resmi untuk pembimbing dan siswa.</p>
+                        </div>
+
+                        <div className="space-y-10">
+                            {downloadsData.length === 0 ? (
+                                <div className="text-center py-16 text-slate-400">
+                                    <Icon name="fa-solid fa-box-open" size={48} className="mb-4 opacity-50 block mx-auto" />
+                                    <p className="font-bold">Belum ada file unduhan tersedia.</p>
+                                </div>
+                            ) : (
+                                downloadsData.map((cat) => (
+                                    <div key={cat.id} className="space-y-4 group/cat relative">
+                                        
+                                        <div className="flex items-end justify-between pr-2">
+                                            <div>
+                                                <h4 className="font-black text-slate-800 text-lg flex items-center gap-2">{cat.category}</h4>
+                                                {cat.desc && <p className="text-xs text-slate-400 mt-1 font-medium">{cat.desc}</p>}
+                                            </div>
+                                            {isAdmin && (
+                                                <div className="flex items-center gap-2 opacity-0 group-hover/cat:opacity-100 transition-opacity">
+                                                    <button onClick={() => setFormModal({ type: 'item', mode: 'add', parentId: cat.id, data: null })} className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors uppercase tracking-widest"><Icon name="fa-solid fa-plus" className="mr-1"/> File</button>
+                                                    <button onClick={() => setFormModal({ type: 'category', mode: 'edit', data: cat })} className="w-7 h-7 flex items-center justify-center text-slate-400 bg-slate-50 border border-slate-200 rounded-lg hover:text-indigo-600 hover:bg-indigo-50"><Icon name="fa-solid fa-pen" size={12}/></button>
+                                                    <button onClick={() => handleDeleteCategory(cat.id)} className="w-7 h-7 flex items-center justify-center text-slate-400 bg-slate-50 border border-slate-200 rounded-lg hover:text-rose-600 hover:bg-rose-50"><Icon name="fa-solid fa-trash" size={12}/></button>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {!cat.items || cat.items.length === 0 ? (
+                                                <div className="col-span-full p-4 border-2 border-dashed border-slate-200 rounded-xl text-center text-xs font-bold text-slate-400">Belum ada file di kategori ini.</div>
+                                            ) : (
+                                                cat.items.map(item => (
+                                                    <div key={item.id} className="flex flex-col justify-between p-5 bg-white border border-slate-200 rounded-xl hover:border-indigo-400 hover:shadow-md transition-all group relative">
+                                                        {isAdmin && (
+                                                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white p-1 rounded-md shadow-sm border border-slate-100 z-10">
+                                                                <button onClick={() => setFormModal({ type: 'item', mode: 'edit', parentId: cat.id, data: item })} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded hover:bg-slate-50"><Icon name="fa-solid fa-pen" size={10}/></button>
+                                                                <button onClick={() => handleDeleteItem(cat.id, item.id)} className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded hover:bg-slate-50"><Icon name="fa-solid fa-trash" size={10}/></button>
+                                                            </div>
+                                                        )}
+                                                        <div className="flex items-start gap-4 mb-5">
+                                                            <div className="w-12 h-12 shrink-0 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center">
+                                                                <Icon name={item.icon} size={22} className={item.color} />
+                                                            </div>
+                                                            <div className="pr-4">
+                                                                <h5 className="font-bold text-slate-800 text-sm leading-snug">{item.title}</h5>
+                                                                <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded mt-2 inline-block uppercase tracking-wider">{item.type} {item.size && `• ${item.size}`}</span>
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => window.open(item.link, '_blank')} className="w-full py-2.5 bg-white border border-slate-200 text-slate-600 text-[11px] font-black rounded-lg group-hover:bg-slate-50 group-hover:text-indigo-600 group-hover:border-indigo-200 transition-all flex items-center justify-center gap-2 uppercase tracking-widest shadow-sm">
+                                                            <Icon name={item.icon.includes('link') || item.icon.includes('youtube') ? 'fa-solid fa-arrow-up-right-from-square' : 'fa-solid fa-download'} size={12} /> {item.btnText}
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         // ==========================================
         // APP MAIN WRAPPER
@@ -1713,10 +1955,10 @@
           const [appUser, setAppUser] = useState(null); 
           const [progressData, setProgressData] = useState({});
           const [attendanceData, setAttendanceData] = useState({});
+          const [downloadsData, setDownloadsData] = useState([]); // State untuk Pusat Unduhan
           const [loading, setLoading] = useState(true);
           const [modalConfig, setModalConfig] = useState(null); 
           const [overrideStudentId, setOverrideStudentId] = useState(null);
-          const [checklistTargetId, setChecklistTargetId] = useState(null); // State baru untuk melompat ke siswa
           
           // FITUR BARU: ROUTING BERBASIS LINK (HASH ROUTER)
           const [activeTab, setActiveTab] = useState(() => {
@@ -1748,6 +1990,7 @@
           const [activeField, setActiveField] = useState('ALL');
           const [sidebarOpen, setSidebarOpen] = useState(false);
           const [resetSignal, setResetSignal] = useState(0); 
+          const [checklistTargetId, setChecklistTargetId] = useState(null); 
 
           const showAlert = (message) => setModalConfig({ type: 'alert', message });
           const showConfirm = (message, onConfirm) => setModalConfig({ type: 'confirm', message, onConfirm });
@@ -1768,13 +2011,12 @@
               }
           };
 
-          // FUNGSI BARU: Untuk melompat langsung ke halaman detail siswa dari dashboard
           const handleJumpToProgress = (studentId) => {
               const student = DELEGASI.find(s => s.id === studentId);
               if (student) {
-                  setActiveField(student.field); // Set filter bidang otomatis
-                  setChecklistTargetId(studentId); // Kirim ID target
-                  setActiveTab('checklist'); // Pindah tab
+                  setActiveField(student.field); 
+                  setChecklistTargetId(studentId); 
+                  setActiveTab('checklist'); 
               }
           };
 
@@ -1784,6 +2026,7 @@
                 return onAuthStateChanged(auth, setFirebaseUser);
             } else {
                 setLoading(false); 
+                setDownloadsData(DEFAULT_DOWNLOADS); // Seed default jika offline
             }
           }, []);
 
@@ -1798,10 +2041,21 @@
             const unsubAttendance = onSnapshot(query(collection(db, 'artifacts', appIdStr, 'public', 'data', 'attendance')), (snap) => {
               const d = {}; snap.forEach(doc => d[doc.id] = doc.data());
               setAttendanceData(d);
-              setLoading(false);
             });
 
-            return () => { unsubProgress(); unsubAttendance(); };
+            const unsubDownloads = onSnapshot(doc(db, 'artifacts', appIdStr, 'public', 'data', 'downloads', 'main'), (snap) => {
+              if (snap.exists()) {
+                  setDownloadsData(snap.data().categories || []);
+              } else {
+                  setDownloadsData(DEFAULT_DOWNLOADS); // Otomatis mengisi data awal jika database masih kosong
+              }
+              setLoading(false);
+            }, (err) => {
+                console.error(err);
+                setLoading(false);
+            });
+
+            return () => { unsubProgress(); unsubAttendance(); unsubDownloads(); };
           }, [firebaseUser]);
 
           if (loading) return (
@@ -1961,9 +2215,9 @@
                     {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} onJumpToStudent={handleJumpToProgress} />}
                     {activeTab === 'checklist' && <ChecklistView appUser={appUser} progressData={progressData} activeField={activeField} onOverrideStatus={(s) => setOverrideStudentId(s.id)} resetSignal={resetSignal} checklistTargetId={checklistTargetId} setChecklistTargetId={setChecklistTargetId} />}
                     {activeTab === 'issues' && <IssuesView progressData={progressData} />}
-                    {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
+                    {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
                     {activeTab === 'attendance' && <AttendanceView appUser={appUser} attendanceData={attendanceData} setAttendanceData={setAttendanceData} showAlert={showAlert} showConfirm={showConfirm} />}
-                    {activeTab === 'downloads' && <DownloadsView showAlert={showAlert} />}
+                    {activeTab === 'downloads' && <DownloadsView appUser={appUser} downloadsData={downloadsData} setDownloadsData={setDownloadsData} showAlert={showAlert} showConfirm={showConfirm} isDemo={false} />}
                 </main>
               </div>
 
