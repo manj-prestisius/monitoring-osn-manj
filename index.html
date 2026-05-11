@@ -2,95 +2,58 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Monitoring OSN MA Nurul Jadid</title>
     
-    <!-- Tailwind CSS (Desain & Tampilan) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- FontAwesome (Ikon-ikon Web) -->
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- React & Babel (Mesin Utama Aplikasi) -->
+    <!-- React & Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        /* Menyembunyikan scrollbar tapi tetap bisa di-scroll */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
-        body { font-family: system-ui, -apple-system, sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        /* ================================
-           MOBILE RESPONSIVE ENHANCEMENTS
-           ================================ */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .animate-blink { animation: blink 1.5s infinite; }
+        
+        .sidebar-transition { transition: transform 0.3s ease-in-out; }
+        .chart-grid-line { border-top: 1px solid #f1f5f9; width: 100%; }
+        
+        @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+        .pulse-active { animation: pulse-green 2s infinite; }
 
-        /* Prevent horizontal overflow on mobile */
         @media (max-width: 767px) {
             body { overflow-x: hidden; }
-
-            /* Safe area inset for iOS home bar */
-            .mobile-bottom-nav {
-                padding-bottom: env(safe-area-inset-bottom, 8px);
-            }
-
-            /* Compact card sizing on mobile */
-            .mobile-compact { padding: 12px !important; }
-
-            /* Smooth tap highlight removal */
-            button { -webkit-tap-highlight-color: transparent; }
+            .mobile-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 8px); }
+            .filter-scroll { flex-wrap: nowrap !important; overflow-x: auto; -webkit-overflow-scrolling: touch; }
         }
-
-        /* Mobile bottom nav transition */
-        .mobile-nav-btn {
-            transition: background-color 0.15s ease, color 0.15s ease;
-            border-radius: 12px;
-        }
-
-        /* Animate-in fallback for browsers without @starting-style */
         .animate-in { animation: fadeSlideIn 0.3s ease forwards; }
-        @keyframes fadeSlideIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Mobile header shadow */
-        .mobile-header {
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-        }
-
-        /* Filter pills scroll on mobile */
-        @media (max-width: 767px) {
-            .filter-scroll {
-                flex-wrap: nowrap !important;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-        }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
     
-    <!-- Tempat aplikasi React akan dimuat -->
     <div id="root"></div>
 
-    <!-- KODE UTAMA APLIKASI (REACT + FIREBASE) -->
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18';
+        import React, { useState, useEffect, useMemo, useRef } from 'https://esm.sh/react@18';
         import { createRoot } from 'https://esm.sh/react-dom@18/client';
         
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js';
         import { getFirestore, collection, doc, setDoc, onSnapshot, query } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js';
 
-        // ==========================================
-        // PANDUAN FIREBASE (UNTUK DATABASE PERMANEN)
-        // ==========================================
-        // Jika Bapak ingin data ceklis tidak hilang saat web di-refresh, Bapak harus 
-        // mengganti tulisan "GANTI_DENGAN_..." di bawah ini dengan konfigurasi 
-        // dari website Firebase milik Bapak sendiri.
-        
-        let firebaseConfig = {
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
             apiKey: "AIzaSyBShY8i4W3JpCdZ_qr2R5KFDdaNoivz3Ag",
             authDomain: "osn-manj.firebaseapp.com",
             projectId: "osn-manj",
@@ -100,32 +63,25 @@
             measurementId: "G-5JGFC5101L"
         };
 
-        // Otomasi sistem jika diujicobakan dalam lingkungan simulasi
-        if (typeof __firebase_config !== 'undefined') {
-            firebaseConfig = JSON.parse(__firebase_config);
-        }
-        const appIdStr = typeof __app_id !== 'undefined' ? __app_id : 'osn-manj-2026';
+        const appIdStr = 'osn-manj-2026';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-        // Cek apakah Bapak sudah memasukkan kunci Firebase atau belum
-        const isFirebaseConfigured = firebaseConfig.apiKey !== "GANTI_DENGAN_API_KEY_BAPAK" && firebaseConfig.apiKey !== "";
-        
-        let app, auth, db;
-        if (isFirebaseConfigured) {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-        }
+        const Icon = ({ name, className = "" }) => <i className={`${name} ${className}`}></i>;
 
-        // ==========================================
-        // KOMPONEN IKON
-        // ==========================================
-        const Icon = ({ name, size = 16, className = "" }) => (
-            <i className={`${name} ${className}`} style={{ fontSize: size }}></i>
-        );
+        const TARGET_PERTEMUAN = 18;
 
-        // ==========================================
-        // DATA MASTER (Siswa, Silabus, Bidang)
-        // ==========================================
+        const APP_USERS = [
+            { id: 'admin',     name: 'Al Basyir',          role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
+            { id: 'guru_mat',  name: 'Ust. Matematika',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
+            { id: 'guru_bio',  name: 'Ust. Biologi',       role: 'guru',  field: 'BIO', pin: '1234',   title: 'Pembimbing BIO' },
+            { id: 'guru_fis',  name: 'Ust. Fisika',        role: 'guru',  field: 'FIS', pin: '1234',   title: 'Pembimbing FIS' },
+            { id: 'guru_kim',  name: 'Ust. Kimia',         role: 'guru',  field: 'KIM', pin: '1234',   title: 'Pembimbing KIM' },
+            { id: 'guru_eko',  name: 'Ust. Ekonomi',       role: 'guru',  field: 'EKO', pin: '1234',   title: 'Pembimbing EKO' },
+            { id: 'guru_geo',  name: 'Ust. Geografi',      role: 'guru',  field: 'GEO', pin: '1234',   title: 'Pembimbing GEO' },
+        ];
+
         const DELEGASI = [
           { id: 'mat_1', name: 'M. Kanzullabiq Kamal', initialStatus: 'Aktif', field: 'MAT' },
           { id: 'mat_2', name: 'Raisah Nur Afrina', initialStatus: 'Aktif', field: 'MAT' },
@@ -152,260 +108,604 @@
         ];
 
         const SYLLABUS_DB = {
-          MAT: [
-            { id: 'm1', cat: 'Aljabar', title: 'Day 1: Ketaksamaan Rataan (AM-GM-HM-QM)' },
-            { id: 'm2', cat: 'Aljabar', title: 'Day 2: Ketaksamaan Cauchy-Schwarz & Jensen' },
-            { id: 'm3', cat: 'Aljabar', title: 'Day 3: Barisan Pola & Induksi Matematika' },
-            { id: 'm4', cat: 'Aljabar', title: 'Day 4: Barisan Rekursif Linear (Fibonacci, Lucas)' },
-            { id: 'm5', cat: 'Aljabar', title: 'Day 5: Algoritma Pembagian & Teorema Sisa/Faktor' },
-            { id: 'm6', cat: 'Aljabar', title: 'Day 6: Akar Polinom & Teorema Vieta' },
-            { id: 'm7', cat: 'Aljabar', title: 'Day 7: Persamaan Fungsi Klasik (Cauchy, Jensen)' },
-            { id: 'm8', cat: 'Aljabar', title: 'Day 8: Sifat Fungsi (Injektif, Surjektif, Konveks, Konkaf)' },
-            { id: 'm9', cat: 'Geometri', title: 'Day 9: Angle Chasing & Segiempat Tali Busur' },
-            { id: 'm10', cat: 'Geometri', title: 'Day 10: Garis Berat, Garis Sumbu, & Lingkaran Luar' },
-            { id: 'm11', cat: 'Geometri', title: 'Day 11: Garis Tinggi & Garis Bagi (Dalam/Luar)' },
-            { id: 'm12', cat: 'Geometri', title: 'Day 12: Lingkaran Singgung & Isogonal Konjugat' },
-            { id: 'm13', cat: 'Geometri', title: 'Day 13: Titik Kuasa & Sumbu Radikal' },
-            { id: 'm14', cat: 'Geometri', title: 'Day 14: Teorema Ptolemy & Garis Simpson' },
-            { id: 'm15', cat: 'Kombinatorika', title: 'Day 15: Aturan Penjumlahan, Perkalian, & Permutasi' },
-            { id: 'm16', cat: 'Kombinatorika', title: 'Day 16: Permutasi Siklis, Unsur Sama, & String' },
-            { id: 'm17', cat: 'Kombinatorika', title: 'Day 17: Kombinasi, Distribusi, & Partisi' },
-            { id: 'm18', cat: 'Kombinatorika', title: 'Day 18: Teorema De Moivre & Stirling Number' },
-            { id: 'm19', cat: 'Kombinatorika', title: 'Day 19: Prinsip Injeksi, Bijeksi, & Pigeonhole' },
-            { id: 'm20', cat: 'Kombinatorika', title: 'Day 20: Binom Newton, Multinom, & Segitiga Pascal' },
-            { id: 'm21', cat: 'Kombinatorika', title: 'Day 21: Peluang Kejadian (Lepas, Bebas, Bersyarat)' },
-            { id: 'm22', cat: 'Kombinatorika', title: 'Day 22: Aturan Bayes, Sebaran Peluang, & Himpunan' },
-            { id: 'm23', cat: 'Teori Bilangan', title: 'Day 23: Dasar Keterbagian & Algoritma Pembagian' },
-            { id: 'm24', cat: 'Teori Bilangan', title: 'Day 24: FPB, KPK, & Bilangan Prima' },
-            { id: 'm25', cat: 'Teori Bilangan', title: 'Day 25: Persamaan Diophantine Sederhana' },
-            { id: 'm26', cat: 'Teori Bilangan', title: 'Day 26: Kongruensi Modulo & Residu Lengkap' },
-            { id: 'm27', cat: 'Teori Bilangan', title: 'Day 27: Teorema Wilson & Teorema Fermat' },
-            { id: 'm28', cat: 'Teori Bilangan', title: 'Day 28: Teorema Euler, Order, & Akar Primitif' },
-            { id: 'm29', cat: 'Teori Bilangan', title: 'Day 29: Persamaan Kongruensi Linier & Sisa China' },
-            { id: 'm30', cat: 'Teori Bilangan', title: 'Day 30: Kongruensi Kuadrat & Residu Kuadratik' },
-          ],
-          BIO: [
-            { id: 'b1', cat: 'Biologi Sel & Molekuler', title: 'Day 1: Komponen Kimia Sel & Makromolekul' },
-            { id: 'b2', cat: 'Biologi Sel & Molekuler', title: 'Day 2: Struktur & Fungsi Spesifik Organel' },
-            { id: 'b3', cat: 'Biologi Sel & Molekuler', title: 'Day 3: Transport Membran & Kinetika Enzim' },
-            { id: 'b4', cat: 'Biologi Sel & Molekuler', title: 'Day 4: Metabolisme Respirasi Seluler' },
-            { id: 'b5', cat: 'Biologi Sel & Molekuler', title: 'Day 5: Metabolisme Fotosintesis (C3, C4, CAM)' },
-            { id: 'b6', cat: 'Biologi Sel & Molekuler', title: 'Day 6: Regulasi Siklus Sel & Pembelahan' },
-            { id: 'b7', cat: 'Fisiologi Tumbuhan', title: 'Day 7: Jaringan & Organ Tumbuhan' },
-            { id: 'b8', cat: 'Fisiologi Tumbuhan', title: 'Day 8: Transportasi Xilem & Translokasi Floem' },
-            { id: 'b9', cat: 'Fisiologi Tumbuhan', title: 'Day 9: Pertumbuhan, Perkembangan, & Hormon Tumbuhan' },
-            { id: 'b10', cat: 'Fisiologi Hewan', title: 'Day 10: Sistem Pencernaan & Nutrisi' },
-            { id: 'b11', cat: 'Fisiologi Hewan', title: 'Day 11: Sistem Sirkulasi & Pernapasan' },
-            { id: 'b12', cat: 'Fisiologi Hewan', title: 'Day 12: Sistem Ekskresi & Osmoregulasi' },
-            { id: 'b13', cat: 'Fisiologi Hewan', title: 'Day 13: Sistem Saraf & Sistem Indera' },
-            { id: 'b14', cat: 'Fisiologi Hewan', title: 'Day 14: Sistem Endokrin (Hormon)' },
-            { id: 'b15', cat: 'Fisiologi Hewan', title: 'Day 15: Sistem Imunitas (Kekebalan)' },
-            { id: 'b16', cat: 'Fisiologi Hewan', title: 'Day 16: Sistem Reproduksi & Embriologi' },
-            { id: 'b17', cat: 'Genetika & Evolusi', title: 'Day 17: Genetika Mendelian & Pola Pewarisan' },
-            { id: 'b18', cat: 'Genetika & Evolusi', title: 'Day 18: Penyimpangan Semu Mendel & Pautan Gen' },
-            { id: 'b19', cat: 'Genetika & Evolusi', title: 'Day 19: Replikasi DNA, Transkripsi, & Translasi' },
-            { id: 'b20', cat: 'Genetika & Evolusi', title: 'Day 20: Regulasi Ekspresi Gen & Mutasi' },
-            { id: 'b21', cat: 'Genetika & Evolusi', title: 'Day 21: Teknologi DNA Rekombinan & Plasmid' },
-            { id: 'b22', cat: 'Genetika & Evolusi', title: 'Day 22: Genetika Populasi (Hardy-Weinberg)' },
-            { id: 'b23', cat: 'Genetika & Evolusi', title: 'Day 23: Mekanisme Evolusi, Spesiasi, & Filogeni' },
-            { id: 'b24', cat: 'Ekologi & Etologi', title: 'Day 24: Dinamika Populasi & Kurva Kelangsungan Hidup' },
-            { id: 'b25', cat: 'Ekologi & Etologi', title: 'Day 25: Interaksi Komunitas & Suksesi' },
-            { id: 'b26', cat: 'Ekologi & Etologi', title: 'Day 26: Aliran Energi & Siklus Biogeokimia' },
-            { id: 'b27', cat: 'Ekologi & Etologi', title: 'Day 27: Ekosistem, Bioma & Permasalahan Lingkungan' },
-            { id: 'b28', cat: 'Ekologi & Etologi', title: 'Day 28: Perilaku Bawaan (Innate) & Ritme Biologis' },
-            { id: 'b29', cat: 'Ekologi & Etologi', title: 'Day 29: Perilaku Pembelajaran & Komunikasi Hewan' },
-            { id: 'b30', cat: 'Biosistematika', title: 'Day 30: Klasifikasi Kehidupan & Taksonomi 5 Kingdom' },
-          ],
-          FIS: [
-            { id: 'f1', cat: 'Mekanika', title: 'Day 1: Analisis Vektor & Kinematika 1 Dimensi' },
-            { id: 'f2', cat: 'Mekanika', title: 'Day 2: Kinematika 2 Dimensi (Gerak Parabola & Melingkar)' },
-            { id: 'f3', cat: 'Mekanika', title: 'Day 3: Statika Partikel & Gaya Gesek' },
-            { id: 'f4', cat: 'Mekanika', title: 'Day 4: Dinamika Hukum Newton' },
-            { id: 'f5', cat: 'Mekanika', title: 'Day 5: Usaha, Energi Kinetik & Energi Potensial' },
-            { id: 'f6', cat: 'Mekanika', title: 'Day 6: Hukum Kekekalan Energi Mekanik' },
-            { id: 'f7', cat: 'Mekanika', title: 'Day 7: Pusat Massa, Momentum Linier & Impuls' },
-            { id: 'f8', cat: 'Mekanika', title: 'Day 8: Tumbukan & Kekekalan Momentum' },
-            { id: 'f9', cat: 'Mekanika', title: 'Day 9: Momen Inersia & Torsi' },
-            { id: 'f10', cat: 'Mekanika', title: 'Day 10: Dinamika Rotasi & Benda Menggelinding' },
-            { id: 'f11', cat: 'Mekanika', title: 'Day 11: Momentum Sudut & Kekekalan Momentum Sudut' },
-            { id: 'f12', cat: 'Mekanika', title: 'Day 12: Statika Benda Tegar & Kesetimbangan' },
-            { id: 'f13', cat: 'Mekanika', title: 'Day 13: Hukum Gravitasi Universal Newton' },
-            { id: 'f14', cat: 'Mekanika', title: 'Day 14: Hukum Kepler & Orbit Planet' },
-            { id: 'f15', cat: 'Mekanika', title: 'Day 15: Statika Fluida (Tekanan & Archimedes)' },
-            { id: 'f16', cat: 'Mekanika', title: 'Day 16: Dinamika Fluida (Bernoulli & Kontinuitas)' },
-            { id: 'f17', cat: 'Mekanika', title: 'Day 17: Osilasi Harmonik Sederhana (Bandul & Pegas)' },
-            { id: 'f18', cat: 'Gelombang & Optik', title: 'Day 18: Gelombang Mekanik & Efek Doppler' },
-            { id: 'f19', cat: 'Gelombang & Optik', title: 'Day 19: Optik Geometri & Optik Fisis' },
-            { id: 'f20', cat: 'Termodinamika', title: 'Day 20: Suhu, Kalor, Pemuaian & Asas Black' },
-            { id: 'f21', cat: 'Termodinamika', title: 'Day 21: Teori Kinetik Gas & Persamaan Gas Ideal' },
-            { id: 'f22', cat: 'Termodinamika', title: 'Day 22: Hukum Termodinamika 0 & I' },
-            { id: 'f23', cat: 'Termodinamika', title: 'Day 23: Siklus Termodinamika & Hukum II (Entropi)' },
-            { id: 'f24', cat: 'Listrik Magnet', title: 'Day 24: Listrik Statis (Hukum Coulomb & Medan Listrik)' },
-            { id: 'f25', cat: 'Listrik Magnet', title: 'Day 25: Potensial Listrik & Kapasitor' },
-            { id: 'f26', cat: 'Listrik Magnet', title: 'Day 26: Rangkaian Arus Searah (DC) & Hukum Kirchhoff' },
-            { id: 'f27', cat: 'Listrik Magnet', title: 'Day 27: Medan Magnet Statis (Biot-Savart & Ampere)' },
-            { id: 'f28', cat: 'Listrik Magnet', title: 'Day 28: Gaya Lorentz pada Muatan & Kawat' },
-            { id: 'f29', cat: 'Listrik Magnet', title: 'Day 29: Induksi Elektromagnetik (Faraday & Lenz)' },
-            { id: 'f30', cat: 'Fisika Modern', title: 'Day 30: Relativitas Khusus & Fisika Kuantum Dasar' },
-          ],
-          KIM: [
-            { id: 'k1', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 1: Nukleon, Isotop & Reaksi Nuklir' },
-            { id: 'k2', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 2: Bilangan Kuantum, Orbital & Aturan Pauli/Hund' },
-            { id: 'k3', cat: 'Struktur Atom & Sifat Periodik', title: 'Day 3: Tren Sifat Periodik Unsur & Reaktivitas' },
-            { id: 'k4', cat: 'Ikatan Kimia', title: 'Day 4: Ikatan Kovalen, Ionik, Logam & Gaya Antarmolekul' },
-            { id: 'k5', cat: 'Ikatan Kimia', title: 'Day 5: Struktur Molekul, Teori Lewis & VSEPR' },
-            { id: 'k6', cat: 'Stoikiometri', title: 'Day 6: Konsep Mol, Konstanta Avogadro & Rumus Empiris' },
-            { id: 'k7', cat: 'Stoikiometri', title: 'Day 7: Perhitungan Stoikiometri Larutan & Persamaan Gas' },
-            { id: 'k8', cat: 'Kesetimbangan Kimia', title: 'Day 8: Kesetimbangan Kimia, Kp, Kc & Prinsip Le Chatelier' },
-            { id: 'k9', cat: 'Kesetimbangan Kimia', title: 'Day 9: Teori Asam-Basa Arrhenius & Bronsted-Lowry' },
-            { id: 'k10', cat: 'Kesetimbangan Kimia', title: 'Day 10: Perhitungan pH Larutan Asam, Basa & Hidrolisis' },
-            { id: 'k11', cat: 'Kesetimbangan Kimia', title: 'Day 11: pH Larutan Penyangga (Buffer) & Pengenceran' },
-            { id: 'k12', cat: 'Kesetimbangan Kimia', title: 'Day 12: Kelarutan & Konstanta Hasil Kali Kelarutan (Ksp)' },
-            { id: 'k13', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 13: Gaya Gerak Listrik & Persamaan Nernst' },
-            { id: 'k14', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 14: Hukum Faraday & Stoikiometri Elektrolisis' },
-            { id: 'k15', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 15: Kurva Titrasi Asam-Basa & Pilihan Indikator' },
-            { id: 'k16', cat: 'Elektrokimia & Kimia Analitik', title: 'Day 16: Titrasi Redoks (Permanganometri & Iodometri)' },
-            { id: 'k17', cat: 'Kinetika Kimia', title: 'Day 17: Orde Reaksi, Konstanta Laju & Reaksi Elementer' },
-            { id: 'k18', cat: 'Kinetika Kimia', title: 'Day 18: Persamaan Arrhenius, Energi Aktivasi & Katalis' },
-            { id: 'k19', cat: 'Termodinamika Kimia', title: 'Day 19: Hukum Hess, Kalorimetri & Siklus Born-Haber' },
-            { id: 'k20', cat: 'Termodinamika Kimia', title: 'Day 20: Entropi, Energi Gibbs & Arah Perubahan Spontan' },
-            { id: 'k21', cat: 'Kimia Anorganik', title: 'Day 21: Reaksi Unsur Blok-S (Air, Oksigen, Halogen)' },
-            { id: 'k22', cat: 'Kimia Anorganik', title: 'Day 22: Senyawa Oksida Karbon, Nitrogen & Sulfur' },
-            { id: 'k23', cat: 'Kimia Anorganik', title: 'Day 23: Bilangan Oksidasi Logam Transisi & Warna Ion' },
-            { id: 'k24', cat: 'Kimia Anorganik', title: 'Day 24: Reaksi Kompleksasi & Konstanta Pembentukan' },
-            { id: 'k25', cat: 'Kimia Organik', title: 'Day 25: Hibridisasi, Aromatisitas & Isomerisme Organik' },
-            { id: 'k26', cat: 'Kimia Organik', title: 'Day 26: Stereokimia (E/Z, Kiralitas R/S, Proyeksi Fisher)' },
-            { id: 'k27', cat: 'Kimia Organik', title: 'Day 27: Adisi Elektrofilik & Substitusi Aromatik' },
-            { id: 'k28', cat: 'Kimia Organik', title: 'Day 28: Substitusi Nukleofilik (SN1/SN2) & Eliminasi (E1/E2)' },
-            { id: 'k29', cat: 'Kimia Organik', title: 'Day 29: Reaksi Oksidasi-Reduksi Gugus Fungsi Organik' },
-            { id: 'k30', cat: 'Kimia Organik', title: 'Day 30: Polimerisasi, Asam Amino, Karbohidrat & Lipid' },
-          ],
-          EKO: [
-            { id: 'e1', cat: 'Microeconomics', title: 'Day 1: Competitive Markets (Demand, Supply, Equilibrium)' },
-            { id: 'e2', cat: 'Microeconomics', title: 'Day 2: Elasticities (Price, Cross, Income)' },
-            { id: 'e3', cat: 'Microeconomics', title: 'Day 3: Consumer\'s Choice & Utility' },
-            { id: 'e4', cat: 'Microeconomics', title: 'Day 4: Firm\'s Behavior & Cost Structure' },
-            { id: 'e5', cat: 'Microeconomics', title: 'Day 5: Non-Competitive Markets (Monopoly & Oligopoly)' },
-            { id: 'e6', cat: 'Microeconomics', title: 'Day 6: Monopolistic Competition & Game Theory (Nash Eq)' },
-            { id: 'e7', cat: 'Microeconomics', title: 'Day 7: Market Failures (Externalities & Public Goods)' },
-            { id: 'e8', cat: 'Microeconomics', title: 'Day 8: Asymmetric Information & Innovation' },
-            { id: 'e9', cat: 'Macroeconomics', title: 'Day 9: Measuring Income (GDP/GNP/Institutions)' },
-            { id: 'e10', cat: 'Macroeconomics', title: 'Day 10: Inflation, Unemployment & Labor Market' },
-            { id: 'e11', cat: 'Macroeconomics', title: 'Day 11: Fluctuations & Crises' },
-            { id: 'e12', cat: 'Macroeconomics', title: 'Day 12: Technology & Long-Run Growth' },
-            { id: 'e13', cat: 'Macroeconomics', title: 'Day 13: Inequality & Wealth Distribution' },
-            { id: 'e14', cat: 'Monetary Economics', title: 'Day 14: Currencies & Currency Unions' },
-            { id: 'e15', cat: 'Monetary Economics', title: 'Day 15: Exchange Rates, Specialization & Gains from Trade' },
-            { id: 'e16', cat: 'Monetary Economics', title: 'Day 16: Protectionism, Winners and Losers' },
-            { id: 'e17', cat: 'Monetary Economics', title: 'Day 17: Money & Monetary Policy' },
-            { id: 'e18', cat: 'Monetary Economics', title: 'Day 18: Fiscal Policy & Government Budget' },
-            { id: 'e19', cat: 'Monetary Economics', title: 'Day 19: Economics of Environment & Sustainable Development' },
-            { id: 'e20', cat: 'Finance & Banking', title: 'Day 20: Banks, Money and Credit Market' },
-            { id: 'e21', cat: 'Finance & Banking', title: 'Day 21: Setting Financial Goals & Decision Making' },
-            { id: 'e22', cat: 'Finance & Banking', title: 'Day 22: Basic Probability and Risk vs Return' },
-            { id: 'e23', cat: 'Finance & Banking', title: 'Day 23: Risk Diversification' },
-            { id: 'e24', cat: 'Finance & Banking', title: 'Day 24: Compound Interest & Return Rates Analysis' },
-            { id: 'e25', cat: 'Finance & Banking', title: 'Day 25: Borrowing Basics & Mortgage Borrowing' },
-            { id: 'e26', cat: 'Finance & Banking', title: 'Day 26: Charge It Right & Building Credit History' },
-            { id: 'e27', cat: 'Finance & Banking', title: 'Day 27: Personal Taxes & Planning for Retirement' },
-            { id: 'e28', cat: 'Finance & Banking', title: 'Day 28: Making the Most of Income & Spending/Saving Plan' },
-            { id: 'e29', cat: 'Finance & Banking', title: 'Day 29: Protecting Money, Identity & Ability to Recognise Fraud' },
-            { id: 'e30', cat: 'Finance & Banking', title: 'Day 30: Digital Assets, Cryptocurrency & Biases in Finances' },
-          ],
-          GEO: [
-            { id: 'g1', cat: 'Iklim & Atmosfer', title: 'Day 1: Pengantar Cuaca & Sirkulasi Atmosfer' },
-            { id: 'g2', cat: 'Iklim & Atmosfer', title: 'Day 2: Dinamika Perubahan Iklim & Fenomena Cuaca Ekstrem' },
-            { id: 'g3', cat: 'Kebencanaan', title: 'Day 3: Jenis Bencana & Siklus Manajemen Bencana' },
-            { id: 'g4', cat: 'Kebencanaan', title: 'Day 4: Mitigasi, Penyesuaian Ruang & Adaptasi Lingkungan' },
-            { id: 'g5', cat: 'Sumber Daya', title: 'Day 5: Klasifikasi & Manajemen Sumber Daya Geografis' },
-            { id: 'g6', cat: 'Geografi Lingkungan', title: 'Day 6: Pembangunan Berkelanjutan & Ekologi Ruang' },
-            { id: 'g7', cat: 'Geografi Lingkungan', title: 'Day 7: Pencemaran Lingkungan & Degradasi Lahan' },
-            { id: 'g8', cat: 'Geologi & Geomorfologi', title: 'Day 8: Struktur Bumi, Mineral & Siklus Pembentukan Batuan' },
-            { id: 'g9', cat: 'Geologi & Geomorfologi', title: 'Day 9: Tektonik Lempeng & Dampak Vulkanisme/Seisme' },
-            { id: 'g10', cat: 'Geologi & Geomorfologi', title: 'Day 10: Geomorfologi Eksogen, Pelapukan & Erosi Bentang Alam' },
-            { id: 'g11', cat: 'Geologi & Geomorfologi', title: 'Day 11: Geografi Tanah, Formasi Pedogenesis & Penggunaan Lahan' },
-            { id: 'g12', cat: 'Hidrosfer & Oseanografi', title: 'Day 12: Siklus Hidrologi, Dinamika Airtanah & DAS' },
-            { id: 'g13', cat: 'Hidrosfer & Oseanografi', title: 'Day 13: Oseanografi Fisik, Arus Laut & Morfologi Dasar Laut' },
-            { id: 'g14', cat: 'Geografi Manusia', title: 'Day 14: Geografi Pertanian & Permasalahan Ketahanan Pangan' },
-            { id: 'g15', cat: 'Kependudukan', title: 'Day 15: Dinamika Kependudukan, Fertilitas, Mortalitas & Migrasi' },
-            { id: 'g16', cat: 'Kependudukan', title: 'Day 16: Struktur Demografi, Piramida Penduduk & Proyeksi' },
-            { id: 'g17', cat: 'Geografi Ekonomi', title: 'Day 17: Sektor Ekonomi Basis & Teori Lokasi Industri' },
-            { id: 'g18', cat: 'Geografi Ekonomi', title: 'Day 18: Jaringan Perdagangan Internasional & Efek Globalisasi' },
-            { id: 'g19', cat: 'Pembangunan Spasial', title: 'Day 19: Indikator Pembangunan & Teori Pertumbuhan Regional' },
-            { id: 'g20', cat: 'Pembangunan Spasial', title: 'Day 20: Ketimpangan Spasial & Pusat Pertumbuhan Wilayah' },
-            { id: 'g21', cat: 'Geografi Kota', title: 'Day 21: Teori Struktur Ruang Kota, Sub-urbanisasi & Urbanisasi' },
-            { id: 'g22', cat: 'Geografi Kota', title: 'Day 22: Perencanaan Tata Ruang Kota & Manajemen Permukiman' },
-            { id: 'g23', cat: 'Geografi Budaya', title: 'Day 23: Pariwisata Spasial, Manajemen Destinasi & Ekowisata' },
-            { id: 'g24', cat: 'Geografi Budaya', title: 'Day 24: Geografi Budaya, Persebaran Etnolinguistik & Identitas' },
-            { id: 'g25', cat: 'Kartografi', title: 'Day 25: Kartografi Dasar, Proyeksi Peta & Skala Distorsi' },
-            { id: 'g26', cat: 'Kartografi', title: 'Day 26: Analisis Simbolisasi Peta Topografi & Kontur' },
-            { id: 'g27', cat: 'Pemetaan Spasial', title: 'Day 27: Penginderaan Jauh, Citra Satelit & Foto Udara' },
-            { id: 'g28', cat: 'Pemetaan Spasial', title: 'Day 28: Sistem Informasi Geografis (SIG), Vektor & Raster' },
-            { id: 'g29', cat: 'Pemetaan Spasial', title: 'Day 29: Analisis Spasial Komputasional (Overlay & Buffering)' },
-            { id: 'g30', cat: 'Pemetaan Spasial', title: 'Day 30: Integrasi Analisis Geospasial untuk Pemecahan Kasus' },
-          ],
+          MAT: Array.from({length: 30}, (_, i) => ({ id: `m${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Matematika Hari Ke-${i+1}` })),
+          BIO: Array.from({length: 30}, (_, i) => ({ id: `b${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Biologi Hari Ke-${i+1}` })),
+          FIS: Array.from({length: 30}, (_, i) => ({ id: `f${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Fisika Hari Ke-${i+1}` })),
+          KIM: Array.from({length: 30}, (_, i) => ({ id: `k${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Kimia Hari Ke-${i+1}` })),
+          EKO: Array.from({length: 30}, (_, i) => ({ id: `e${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Ekonomi Hari Ke-${i+1}` })),
+          GEO: Array.from({length: 30}, (_, i) => ({ id: `g${i+1}`, cat: 'Syllabus', title: `Day ${i+1}: Materi Geografi Hari Ke-${i+1}` })),
         };
 
         const FIELDS = [
           { id: 'ALL', label: 'Semua Bidang', color: 'bg-slate-800' },
-          { id: 'MAT', label: 'Matematika', color: 'bg-blue-600' },
-          { id: 'BIO', label: 'Biologi', color: 'bg-green-600' },
-          { id: 'FIS', label: 'Fisika', color: 'bg-purple-600' },
-          { id: 'KIM', label: 'Kimia', color: 'bg-pink-600' },
-          { id: 'EKO', label: 'Ekonomi', color: 'bg-amber-600' },
-          { id: 'GEO', label: 'Geografi', color: 'bg-teal-600' },
+          { id: 'MAT', label: 'OSN Matematika', color: 'bg-blue-600', hex: '#2563eb' },
+          { id: 'BIO', label: 'OSN Biologi', color: 'bg-green-600', hex: '#16a34a' },
+          { id: 'FIS', label: 'OSN Fisika', color: 'bg-purple-600', hex: '#9333ea' },
+          { id: 'KIM', label: 'OSN Kimia', color: 'bg-pink-600', hex: '#db2777' },
+          { id: 'EKO', label: 'OSN Ekonomi', color: 'bg-amber-600', hex: '#d97706' },
+          { id: 'GEO', label: 'OSN Geografi', color: 'bg-teal-600', hex: '#0d9488' },
         ];
 
         const STATUS_TYPES = [
-          { id: 'aman', label: 'Aman', color: 'bg-emerald-500', hex: '#10b981', icon: <Icon name="fa-solid fa-circle-check" size={16} /> },
-          { id: 'pendalaman', label: 'Pendalaman', color: 'bg-amber-500', hex: '#f59e0b', icon: <Icon name="fa-solid fa-circle-question" size={16} /> },
-          { id: 'belum', label: 'Belum Dikuasai', color: 'bg-rose-500', hex: '#ef4444', icon: <Icon name="fa-solid fa-circle-exclamation" size={16} /> },
+          { id: 'aman', label: 'Aman', color: 'bg-emerald-500', hex: '#10b981', icon: <Icon name="fa-solid fa-circle-check" /> },
+          { id: 'pendalaman', label: 'Pendalaman', color: 'bg-amber-500', hex: '#f59e0b', icon: <Icon name="fa-solid fa-circle-question" /> },
+          { id: 'belum', label: 'Belum Dikuasai', color: 'bg-rose-500', hex: '#ef4444', icon: <Icon name="fa-solid fa-circle-exclamation" /> },
         ];
 
-        // ==========================================
-        // FUNGSI BANTU (Helper)
-        // ==========================================
-        const parseScore = (scoreStr) => {
-          if (!scoreStr) return 0;
-          const str = String(scoreStr).trim();
-          if (str.includes('/')) {
-            const [num, den] = str.split('/');
-            const n = Number(num);
-            const d = Number(den);
-            if (d === 0 || isNaN(n) || isNaN(d)) return 0;
-            return (n / d) * 100;
-          }
-          const val = Number(str);
-          return isNaN(val) ? 0 : val;
-        };
-
         const getStudentStats = (studentProg) => {
-          let totalDuration = 0;
-          let totalScore = 0;
-          let scoreCount = 0;
-          let belumCount = 0;
-          let pendalamanCount = 0;
-
+          let totalDuration = 0, totalScore = 0, scoreCount = 0, belumCount = 0, pendalamanCount = 0;
           Object.values(studentProg).forEach(data => {
             const status = typeof data === 'object' ? (data.status || 'belum') : (data || 'belum');
             const dur = typeof data === 'object' ? Number(data.duration) : 0;
             const score = typeof data === 'object' ? data.score : '';
-
             if (status === 'belum') belumCount++;
             if (status === 'pendalaman') pendalamanCount++;
             if (dur && !isNaN(dur)) totalDuration += dur;
             if (score) {
-              totalScore += parseScore(score);
-              scoreCount++;
+              const str = String(score).trim();
+              let val = 0;
+              if (str.includes('/')) {
+                const [n, d] = str.split('/'); val = (Number(n)/Number(d))*100;
+              } else { val = Number(str); }
+              if(!isNaN(val)) { totalScore += val; scoreCount++; }
             }
           });
-
-          const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
-          return { totalDuration, avgScore, belumCount, pendalamanCount };
+          return { totalDuration, avgScore: scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0, belumCount, pendalamanCount };
         };
 
         // ==========================================
-        // KOMPONEN: DASHBOARD UTAMA
+        // CUSTOM MODAL COMPONENT (PENGGANTI ALERT BROWSER)
+        // ==========================================
+        const CustomModal = ({ config, onClose }) => {
+            if (!config) return null;
+            return (
+                <div className="fixed inset-0 bg-slate-900/60 z-[100] flex items-center justify-center p-4 animate-in fade-in">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 text-center animate-in zoom-in-95 duration-200 border border-slate-100">
+                        <div className="w-16 h-16 mx-auto bg-slate-50 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-slate-100">
+                            {config.type === 'confirm' ? (
+                                <Icon name="fa-solid fa-triangle-exclamation text-amber-500 text-3xl animate-pulse" />
+                            ) : (
+                                <Icon name="fa-solid fa-circle-info text-[#5b51d8] text-3xl" />
+                            )}
+                        </div>
+                        <h3 className="text-lg font-black text-slate-800 mb-2">
+                            {config.type === 'confirm' ? 'Konfirmasi Tindakan' : 'Informasi'}
+                        </h3>
+                        <p className="text-sm font-medium text-slate-500 mb-6 leading-relaxed px-2">
+                            {config.message}
+                        </p>
+                        <div className="flex gap-3 justify-center">
+                            {config.type === 'confirm' && (
+                                <button onClick={onClose} className="flex-1 py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors uppercase tracking-widest text-xs">
+                                    Batal
+                                </button>
+                            )}
+                            <button 
+                                onClick={() => {
+                                    if (config.onConfirm) config.onConfirm();
+                                    onClose();
+                                }} 
+                                className={`flex-1 py-3 rounded-xl font-bold text-white transition-all uppercase tracking-widest text-xs shadow-md hover:shadow-lg ${config.type === 'confirm' ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30' : 'bg-[#5b51d8] hover:bg-indigo-700 shadow-indigo-500/30'}`}
+                            >
+                                {config.type === 'confirm' ? 'Ya, Lanjutkan' : 'Mengerti'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // LOGIN SCREEN
+        // ==========================================
+        const LoginScreen = ({ onLogin }) => {
+            const [selectedUser, setSelectedUser] = useState(APP_USERS[0].id);
+            const [pin, setPin] = useState("");
+            const [error, setError] = useState("");
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = APP_USERS.find(u => u.id === selectedUser);
+                if (user && user.pin === pin) {
+                    onLogin(user);
+                } else {
+                    setError("PIN yang Anda masukkan salah.");
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+                    <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200 animate-in">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-slate-900 rounded-2xl mx-auto mb-4 flex items-center justify-center p-2 shadow-lg">
+                                <img src="LOGO_MANJ.png" alt="Logo" className="w-full h-full object-contain" onError={e => e.target.style.display='none'} />
+                            </div>
+                            <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Sistem Monitoring OSN</h1>
+                            <p className="text-xs font-bold text-amber-500 uppercase tracking-widest mt-1">MA Nurul Jadid</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Akses Login</label>
+                                <select 
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold text-slate-700"
+                                    value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}
+                                >
+                                    {APP_USERS.map(u => <option key={u.id} value={u.id}>{u.name} ({u.title})</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">PIN Keamanan</label>
+                                <input 
+                                    type="password" 
+                                    placeholder="Masukkan PIN" 
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-bold tracking-widest"
+                                    value={pin} onChange={(e) => setPin(e.target.value)}
+                                />
+                            </div>
+                            {error && <p className="text-rose-500 text-xs font-bold animate-pulse text-center">{error}</p>}
+                            <button type="submit" className="w-full bg-[#5b51d8] hover:bg-indigo-700 text-white font-black py-3.5 rounded-xl shadow-lg shadow-indigo-500/30 transition-all uppercase tracking-widest text-sm mt-4">
+                                Masuk Sistem
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // KOMPONEN: ABSENSI GURU (DENGAN FOTO & EDIT)
+        // ==========================================
+        const AttendanceView = ({ appUser, attendanceData, setAttendanceData, showAlert, showConfirm }) => {
+            const [isSubmitting, setIsSubmitting] = useState(false);
+            const [showForm, setShowForm] = useState(false);
+            const [location, setLocation] = useState("");
+            const [photoData, setPhotoData] = useState(null);
+            const fileInputRef = useRef(null);
+
+            // STATE & REF UNTUK ADMIN INPUT MANUAL
+            const [adminInputGuruId, setAdminInputGuruId] = useState(null);
+            const [adminLocation, setAdminLocation] = useState("");
+            const [adminPhotoData, setAdminPhotoData] = useState(null);
+            const adminFileInputRef = useRef(null);
+
+            // Fitur Kompresi Gambar untuk menjaga database tetap ringan
+            const handleImageUpload = (e, setPhotoState) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 500; // Kompresi kuat ke ukuran kecil
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // Kualitas 60%
+                        setPhotoState(dataUrl);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+
+            // Fungsi Absen Oleh Guru (Self Service)
+            const handleAbsen = async () => {
+                if (appUser.role !== 'guru') return;
+                if (!location.trim()) { showAlert("Mohon isi lokasi/materi pembimbingan."); return; }
+                if (!photoData) { showAlert("Mohon unggah foto bukti kegiatan."); return; }
+
+                setIsSubmitting(true);
+                const now = new Date();
+                const existingLogs = attendanceData[appUser.id]?.logs || [];
+                
+                const newLog = { 
+                    id: Date.now().toString(),
+                    timestamp: now.toISOString(),
+                    location: location,
+                    photo: photoData,
+                    isAdminInput: false
+                };
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', appUser.id), { logs: [...existingLogs, newLog] });
+                    showAlert("Absensi berhasil dicatat! Terima kasih.");
+                    setShowForm(false);
+                    setLocation("");
+                    setPhotoData(null);
+                } catch (error) {
+                    console.error("Gagal absen", error);
+                    showAlert("Gagal mengirim data. Cek koneksi internet.");
+                }
+                setIsSubmitting(false);
+            };
+
+            // Fungsi Absen Manual Oleh Koordinator (Admin Override)
+            const handleAdminAbsen = async () => {
+                if (!adminLocation.trim()) { showAlert("Lokasi & Materi wajib diisi."); return; }
+                
+                setIsSubmitting(true);
+                const now = new Date();
+                const existingLogs = attendanceData[adminInputGuruId]?.logs || [];
+                
+                const newLog = { 
+                    id: Date.now().toString(),
+                    timestamp: now.toISOString(),
+                    location: adminLocation,
+                    photo: adminPhotoData || "", // Foto opsional jika diinput admin
+                    isAdminInput: true // Penanda khusus inputan koordinator
+                };
+                
+                try {
+                    await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', adminInputGuruId), { logs: [...existingLogs, newLog] });
+                    showAlert("Absensi manual berhasil dicatat ke sistem!");
+                    setAdminInputGuruId(null);
+                    setAdminLocation("");
+                    setAdminPhotoData(null);
+                } catch (error) {
+                    console.error("Gagal absen manual", error);
+                    showAlert("Gagal menyimpan data manual. Cek koneksi internet.");
+                }
+                setIsSubmitting(false);
+            };
+
+            const handleDeleteLog = async (userId, logId) => {
+                showConfirm("Apakah Anda yakin ingin membatalkan/menghapus catatan absen ini? Aksi ini tidak dapat dikembalikan.", async () => {
+                    const userLogs = attendanceData[userId]?.logs || [];
+                    const newLogs = userLogs.filter(l => l.id !== logId && l.timestamp !== logId); 
+                    
+                    try {
+                        await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'attendance', userId), { logs: newLogs });
+                    } catch (error) {
+                        console.error("Gagal menghapus", error);
+                    }
+                });
+            };
+
+            // Tampilan Khusus Koordinator (Admin)
+            if (appUser.role === 'admin') {
+                const guruUsers = APP_USERS.filter(u => u.role === 'guru');
+                const [expandedAdminAtt, setExpandedAdminAtt] = useState({});
+
+                const toggleAdminAtt = (guruId) => {
+                    setExpandedAdminAtt(prev => ({ ...prev, [guruId]: !prev[guruId] }));
+                };
+                
+                return (
+                    <div className="space-y-6 animate-in fade-in pb-20">
+                        
+                        {/* MODAL INPUT MANUAL ADMIN */}
+                        {adminInputGuruId && (
+                            <div className="fixed inset-0 bg-slate-900/70 z-[60] flex items-center justify-center p-4 animate-in fade-in">
+                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200 border border-slate-100">
+                                    <button onClick={() => setAdminInputGuruId(null)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors">
+                                        <Icon name="fa-solid fa-xmark text-lg" />
+                                    </button>
+                                    <h3 className="text-lg font-black text-slate-800 mb-1 flex items-center gap-2">
+                                        <Icon name="fa-solid fa-user-check text-[#5b51d8]" /> Input Absen Manual
+                                    </h3>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-6 border-b pb-3">
+                                        Untuk: <span className="text-[#5b51d8]">{APP_USERS.find(u => u.id === adminInputGuruId)?.name}</span>
+                                    </p>
+                                    
+                                    <div className="space-y-4 text-left">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi (Wajib)</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Contoh: Asrama - Bimbingan Mandiri" 
+                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium"
+                                                value={adminLocation}
+                                                onChange={e => setAdminLocation(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Opsional)</label>
+                                            <input type="file" accept="image/*" ref={adminFileInputRef} onChange={(e) => handleImageUpload(e, setAdminPhotoData)} className="hidden" />
+                                            <div className="flex gap-3 items-center">
+                                                <button onClick={() => adminFileInputRef.current.click()} className="flex-1 bg-white border-2 border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors">
+                                                    <Icon name="fa-solid fa-camera" /> Tambah Foto
+                                                </button>
+                                                {adminPhotoData && (
+                                                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group">
+                                                        <img src={adminPhotoData} alt="Preview" className="w-full h-full object-cover" />
+                                                        <button onClick={() => setAdminPhotoData(null)} className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Icon name="fa-solid fa-trash text-white" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-[9px] text-amber-600 mt-2 italic font-bold"><Icon name="fa-solid fa-circle-info" /> Catatan: Bukti foto bersifat opsional karena diinput secara langsung oleh otoritas Koordinator.</p>
+                                        </div>
+
+                                        <div className="flex gap-3 mt-8 pt-4 border-t border-slate-200">
+                                            <button onClick={() => setAdminInputGuruId(null)} className="flex-1 bg-slate-100 text-slate-600 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                                                Batal
+                                            </button>
+                                            <button onClick={handleAdminAbsen} disabled={isSubmitting || !adminLocation.trim()} className={`flex-1 font-bold py-3.5 rounded-xl text-xs uppercase tracking-widest transition-all shadow-md ${isSubmitting || !adminLocation.trim() ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-indigo-500/30'}`}>
+                                                {isSubmitting ? 'Menyimpan...' : 'Simpan Absen'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                            <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
+                                <Icon name="fa-solid fa-users-viewfinder text-2xl text-indigo-600" />
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Kontrol Vakasi & Kehadiran</h3>
+                            </div>
+                            <p className="text-sm text-slate-500 mb-6 font-medium">Klik pada kartu nama guru untuk melihat rincian riwayat bimbingan, atau menginput kehadiran mereka secara manual.</p>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {guruUsers.map(guru => {
+                                    const logs = attendanceData[guru.id]?.logs || [];
+                                    const count = logs.length;
+                                    const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
+                                    const colorInfo = FIELDS.find(f => f.id === guru.field);
+                                    const isExpanded = expandedAdminAtt[guru.id];
+                                    
+                                    return (
+                                        <div key={guru.id} className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:border-indigo-300">
+                                            {/* Header Card - Clickable */}
+                                            <button 
+                                                onClick={() => toggleAdminAtt(guru.id)}
+                                                className="w-full p-5 flex flex-col items-start bg-white hover:bg-slate-50 transition-colors text-left"
+                                            >
+                                                <div className="flex justify-between items-start w-full mb-3">
+                                                    <div>
+                                                        <div className="font-bold text-slate-800 text-lg">{guru.name}</div>
+                                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{guru.title}</div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-[10px] font-black text-white px-2 py-1 rounded shadow-sm ${colorInfo?.color || 'bg-slate-800'}`}>
+                                                            {count} / {TARGET_PERTEMUAN}
+                                                        </span>
+                                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-400`} />
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
+                                                    <div className={`h-full transition-all duration-1000 ${pct >= 100 ? 'bg-emerald-500' : 'bg-[#5b51d8]'}`} style={{ width: `${pct}%` }}></div>
+                                                </div>
+                                                <div className="w-full text-right mt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">{pct}% Tercapai</div>
+                                            </button>
+
+                                            {/* Rincian Riwayat Admin */}
+                                            {isExpanded && (
+                                                <div className="p-4 border-t border-slate-200 bg-slate-50/50">
+                                                    <div className="flex justify-end mb-4">
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setAdminInputGuruId(guru.id);
+                                                                setAdminLocation("");
+                                                                setAdminPhotoData(null);
+                                                            }}
+                                                            className="text-[10px] font-black text-white bg-[#5b51d8] hover:bg-indigo-700 px-3 py-2 rounded-lg shadow-sm transition-colors flex items-center gap-2 uppercase tracking-widest"
+                                                        >
+                                                            <Icon name="fa-solid fa-user-plus" /> Input Absen Manual
+                                                        </button>
+                                                    </div>
+
+                                                    {logs.length === 0 ? (
+                                                        <p className="text-sm text-slate-400 italic text-center py-4 font-medium">Belum ada riwayat bimbingan.</p>
+                                                    ) : (
+                                                        <ul className="space-y-3">
+                                                            {logs.slice().reverse().map((log, i) => (
+                                                                <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                                                    {/* Foto Thumbnail */}
+                                                                    <div className="w-full sm:w-24 h-24 bg-slate-100 rounded-lg overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center relative">
+                                                                        {log.photo ? (
+                                                                            <img src={log.photo} alt="Bukti" className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <Icon name="fa-solid fa-image text-slate-300 text-2xl" />
+                                                                        )}
+                                                                        {log.isAdminInput && (
+                                                                            <div className="absolute top-1 left-1 bg-[#5b51d8] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase shadow-sm">Manual</div>
+                                                                        )}
+                                                                    </div>
+                                                                    {/* Info Detail */}
+                                                                    <div className="flex flex-col justify-between flex-grow text-left">
+                                                                        <div>
+                                                                            <div className="flex justify-between items-start mb-1">
+                                                                                <div className="font-bold text-slate-700 text-sm">{new Date(log.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' })}</div>
+                                                                                <span className="text-slate-400 text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded">{new Date(log.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
+                                                                            </div>
+                                                                            <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-1.5 leading-relaxed">
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Icon name="fa-solid fa-location-dot text-rose-500" /> 
+                                                                                    {log.location || 'Lokasi tidak dicantumkan'}
+                                                                                </span>
+                                                                                {log.isAdminInput && (
+                                                                                    <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest whitespace-nowrap ml-1">
+                                                                                        <Icon name="fa-solid fa-user-shield mr-1" /> Diinput Koord.
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                        {/* Tombol Hapus Admin */}
+                                                                        <div className="mt-3 text-right">
+                                                                            <button 
+                                                                                onClick={() => handleDeleteLog(guru.id, log.id || log.timestamp)}
+                                                                                className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors"
+                                                                            >
+                                                                                <Icon name="fa-solid fa-trash-can mr-1" /> Batalkan Absen Ini
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Tampilan Khusus Guru
+            const myLogs = attendanceData[appUser.id]?.logs || [];
+            const count = myLogs.length;
+            const pct = Math.min(Math.round((count / TARGET_PERTEMUAN) * 100), 100);
+
+            return (
+                <div className="space-y-6 animate-in fade-in pb-24">
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 text-center">
+                        <h2 className="text-2xl font-black text-slate-800 mb-2">Presensi Kehadiran Pembimbing</h2>
+                        <p className="text-sm text-slate-500 mb-8 font-medium">Wajib diisi setiap selesai melaksanakan bimbingan tatap muka sebagai bukti administrasi vakasi.</p>
+                        
+                        {!showForm ? (
+                            <button 
+                                onClick={() => setShowForm(true)}
+                                className="w-full max-w-sm h-16 rounded-2xl shadow-lg mx-auto flex items-center justify-center transition-all bg-gradient-to-r from-indigo-600 to-[#5b51d8] text-white hover:scale-105 active:scale-95 cursor-pointer pulse-active"
+                            >
+                                <Icon name="fa-solid fa-fingerprint text-2xl mr-3" />
+                                <span className="font-black tracking-widest uppercase text-sm">Isi Kehadiran Hari Ini</span>
+                            </button>
+                        ) : (
+                            <div className="max-w-md mx-auto bg-slate-50 p-6 rounded-2xl border border-slate-200 text-left animate-in slide-in-from-top-4 shadow-sm">
+                                <h4 className="font-black text-indigo-700 mb-4 flex items-center gap-2"><Icon name="fa-solid fa-camera-retro" /> Form Bukti Kehadiran</h4>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Lokasi & Materi Pembimbingan</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Contoh: Lab IPA - Bimbingan Termodinamika" 
+                                            className="w-full p-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-medium"
+                                            value={location}
+                                            onChange={e => setLocation(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Upload Bukti Foto (Selfie / Suasana)</label>
+                                        
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            capture="environment"
+                                            ref={fileInputRef}
+                                            onChange={(e) => handleImageUpload(e, setPhotoData)}
+                                            className="hidden"
+                                        />
+                                        
+                                        <div className="flex gap-3 items-center">
+                                            <button 
+                                                onClick={() => fileInputRef.current.click()}
+                                                className="flex-1 bg-white border-2 border-dashed border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-xs transition-colors"
+                                            >
+                                                <Icon name="fa-solid fa-camera" /> Ambil / Pilih Foto
+                                            </button>
+                                            
+                                            {photoData && (
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 shadow-sm relative group">
+                                                    <img src={photoData} alt="Preview" className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Icon name="fa-solid fa-check text-white" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200">
+                                        <button 
+                                            onClick={() => {setShowForm(false); setPhotoData(null); setLocation("");}}
+                                            className="flex-1 bg-white border border-slate-300 text-slate-600 font-bold py-3 rounded-xl text-xs uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                                        >
+                                            Batal
+                                        </button>
+                                        <button 
+                                            onClick={handleAbsen}
+                                            disabled={isSubmitting || !location || !photoData}
+                                            className={`flex-1 font-bold py-3 rounded-xl text-xs uppercase tracking-widest transition-all ${isSubmitting || !location || !photoData ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' : 'bg-[#5b51d8] text-white hover:bg-indigo-700 shadow-md shadow-indigo-500/30'}`}
+                                        >
+                                            {isSubmitting ? 'Mengirim...' : 'Kirim Absen'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-black text-slate-800 text-lg">Progres Target Bimbingan</h3>
+                            <span className="font-black text-indigo-600 text-xl">{count} <span className="text-sm text-slate-400">/ {TARGET_PERTEMUAN}</span></span>
+                        </div>
+                        <div className="h-4 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner mb-2">
+                            <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${pct}%` }}></div>
+                        </div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">{pct}% Tercapai dari Target Sekolah</p>
+
+                        <div className="mt-8 text-left">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b pb-2">Riwayat Kehadiran Bapak/Ibu</h4>
+                            {myLogs.length === 0 ? (
+                                <p className="text-sm text-slate-400 italic text-center py-6 font-medium">Belum ada riwayat mengajar tercatat.</p>
+                            ) : (
+                                <ul className="space-y-3">
+                                    {myLogs.slice().reverse().map((log, i) => (
+                                        <li key={i} className="flex flex-col sm:flex-row gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl relative overflow-hidden">
+                                            <div className="w-full sm:w-20 h-20 bg-slate-200 rounded-lg overflow-hidden shrink-0 border border-slate-300 relative">
+                                                {log.photo ? (
+                                                    <img src={log.photo} alt="Bukti" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center"><Icon name="fa-solid fa-image text-slate-400 text-2xl" /></div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col justify-between flex-grow">
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <div className="font-bold text-slate-700 text-sm">{new Date(log.timestamp).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+                                                        <span className="text-slate-400 text-[10px] font-black">{new Date(log.timestamp).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})}</span>
+                                                    </div>
+                                                    <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-1.5 leading-relaxed">
+                                                        <span className="flex items-center gap-1">
+                                                            <Icon name="fa-solid fa-location-dot text-rose-500" /> 
+                                                            {log.location || 'Lokasi tidak dicantumkan'}
+                                                        </span>
+                                                        {log.isAdminInput && (
+                                                            <span className="text-[8px] font-black bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-100 uppercase tracking-widest whitespace-nowrap ml-1">
+                                                                <Icon name="fa-solid fa-user-shield mr-1" /> Diinput Koord.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 text-right z-10">
+                                                    <button 
+                                                        onClick={() => handleDeleteLog(appUser.id, log.id || log.timestamp)}
+                                                        className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded border border-rose-100 transition-colors"
+                                                    >
+                                                        <Icon name="fa-solid fa-xmark mr-1" /> Hapus / Batal
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // ==========================================
+        // KOMPONEN: DASHBOARD (STATISTIK)
         // ==========================================
         const Dashboard = ({ progressData, activeField }) => {
           const filteredStudents = useMemo(() => {
@@ -428,7 +728,6 @@
           }, [progressData, filteredStudents]);
 
           const fieldAverages = useMemo(() => {
-            if (activeField !== 'ALL') return [];
             return FIELDS.filter(f => f.id !== 'ALL').map(field => {
               const studentsInField = DELEGASI.filter(s => s.field === field.id);
               let totalFieldScore = 0;
@@ -442,9 +741,9 @@
                  }
               });
               const avgScore = validStudentCount > 0 ? Math.round(totalFieldScore / validStudentCount) : 0;
-              return { ...field, avgScore };
+              return { ...field, avgScore, labelShort: field.id };
             });
-          }, [progressData, activeField]);
+          }, [progressData]);
 
           const warningStudents = useMemo(() => {
             return filteredStudents.map(student => {
@@ -454,181 +753,97 @@
             }).filter(s => s.belumCount >= 3 || (s.avgScore > 0 && s.avgScore < 60) || s.pendalamanCount >= 2);
           }, [filteredStudents, progressData]);
 
-          const handleExportCSV = () => {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Nama Siswa,Bidang,Status Awal,Progress Aman (%),Total Jam Belajar,Rata-rata Skor,Materi Belum Dikuasai\n";
-
-            filteredStudents.forEach(student => {
-              const studentProg = progressData[student.id] || {};
-              const syllabusLen = SYLLABUS_DB[student.field].length;
-              const stStats = getStudentStats(studentProg);
-              const amanCount = Object.values(studentProg).filter(v => (v.status || v) === 'aman').length;
-              const percentAman = Math.round((amanCount / syllabusLen) * 100);
-
-              csvContent += `"${student.name}","${student.field}","${student.initialStatus}","${percentAman}%","${stStats.totalDuration}","${stStats.avgScore}","${stStats.belumCount}"\n`;
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Laporan_OSN_${activeField}_MANJ.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          };
-
-          const pctAman = stats.total > 0 ? (stats.aman / stats.total) * 100 : 0;
-          const pctPendalaman = stats.total > 0 ? (stats.pendalaman / stats.total) * 100 : 0;
-          const pctBelum = stats.total > 0 ? (stats.belum / stats.total) * 100 : 100;
+          const pctAman = stats.total > 0 ? Math.round((stats.aman / stats.total) * 100) : 0;
+          const pctPendalaman = stats.total > 0 ? Math.round((stats.pendalaman / stats.total) * 100) : 0;
+          const pctBelum = stats.total > 0 ? Math.round((stats.belum / stats.total) * 100) : 100;
 
           return (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              
-              <div className="flex justify-end mb-4">
-                <button 
-                  onClick={handleExportCSV}
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-colors"
-                >
-                  <Icon name="fa-solid fa-download" size={16} /> Unduh Laporan (CSV)
+            <div className="space-y-6">
+              <div className="flex justify-end">
+                <button className="bg-[#16a34a] hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-md flex items-center gap-2 transition-all">
+                  <Icon name="fa-solid fa-file-csv" /> Unduh Laporan (CSV)
                 </button>
               </div>
 
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <Icon name="fa-solid fa-chart-pie" size={20} className="text-indigo-600" /> 
-                  Analisis Visual Kesiapan
-                </h3>
-                <div className={`grid gap-8 ${activeField === 'ALL' ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-                    <div className="flex flex-col justify-center">
-                        <div className="mb-4">
-                            <h4 className="text-sm font-bold text-slate-600 mb-1">Distribusi Penguasaan Silabus</h4>
-                            <p className="text-xs text-slate-400">Total {stats.total} Materi Pokok</p>
+              {/* CARD ANALISIS VISUAL */}
+              <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="flex flex-col lg:flex-row gap-12">
+                    {/* Distribusi Penguasaan (Kiri) */}
+                    <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-8 text-[#5b51d8]">
+                            <Icon name="fa-solid fa-chart-pie text-xl" />
+                            <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Analisis Visual Kesiapan</h3>
                         </div>
-                        <div className="h-8 w-full flex rounded-lg overflow-hidden shadow-inner bg-slate-100 mb-4">
-                            <div style={{ width: `${pctAman}%` }} className="bg-emerald-500 transition-all duration-1000 ease-out" title={`Aman: ${Math.round(pctAman)}%`}></div>
-                            <div style={{ width: `${pctPendalaman}%` }} className="bg-amber-500 transition-all duration-1000 ease-out" title={`Pendalaman: ${Math.round(pctPendalaman)}%`}></div>
-                            <div style={{ width: `${pctBelum}%` }} className="bg-rose-500 transition-all duration-1000 ease-out" title={`Belum Dikuasai: ${Math.round(pctBelum)}%`}></div>
+                        <div className="mb-6">
+                            <h4 className="text-sm font-bold text-slate-700 mb-1">Distribusi Penguasaan Silabus</h4>
+                            <p className="text-xs text-slate-400 font-medium">Total {stats.total} Materi Pokok</p>
                         </div>
-                        <div className="flex flex-wrap gap-4 text-xs font-bold text-slate-600">
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-emerald-500"></div> Aman ({Math.round(pctAman)}%)</div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Pendalaman ({Math.round(pctPendalaman)}%)</div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-rose-500"></div> Belum Dikuasai ({Math.round(pctBelum)}%)</div>
+                        <div className="h-10 w-full flex rounded-xl overflow-hidden bg-slate-100 shadow-inner mb-6">
+                            <div style={{ width: `${pctAman}%` }} className="bg-emerald-500 transition-all duration-1000"></div>
+                            <div style={{ width: `${pctPendalaman}%` }} className="bg-amber-500 transition-all duration-1000"></div>
+                            <div style={{ width: `${pctBelum}%` }} className="bg-rose-500 transition-all duration-1000"></div>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-[11px] font-bold text-slate-500">
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-500"></div> Aman ({pctAman}%)</div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Pendalaman ({pctPendalaman}%)</div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-rose-500"></div> Belum Dikuasai ({pctBelum}%)</div>
                         </div>
                     </div>
-                    {activeField === 'ALL' && (
-                        <div className="border-l border-slate-100 pl-8 flex flex-col">
-                            <div className="mb-4">
-                                <h4 className="text-sm font-bold text-slate-600 mb-1">Rata-rata Skor Latihan per Bidang</h4>
-                                <p className="text-xs text-slate-400">Skala 0 - 100</p>
+
+                    {/* Grafik Batang Skor (Kanan) */}
+                    <div className="flex-1">
+                        <div className="mb-4">
+                            <h4 className="text-sm font-bold text-slate-700 mb-1">Rata-rata Skor Latihan per Bidang</h4>
+                            <p className="text-xs text-slate-400 font-medium">Skala 0 - 100</p>
+                        </div>
+                        <div className="relative h-48 mt-10">
+                            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                                <div className="chart-grid-line"></div>
+                                <div className="chart-grid-line"></div>
+                                <div className="chart-grid-line"></div>
+                                <div className="chart-grid-line" style={{ borderTop: '2px solid #e2e8f0' }}></div>
                             </div>
-                            <div className="h-40 flex items-end justify-between gap-2 mt-auto relative">
-                                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
-                                    <div className="w-full border-t border-slate-400"></div>
-                                    <div className="w-full border-t border-slate-400"></div>
-                                    <div className="w-full border-t border-slate-400"></div>
-                                    <div className="w-full border-t border-slate-400"></div>
-                                    <div className="w-full border-t border-slate-400"></div>
-                                </div>
-                                {fieldAverages.map(field => (
-                                    <div key={field.id} className="flex flex-col items-center flex-1 group z-10">
-                                        <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] py-1 px-2 rounded mb-2 absolute -top-8 font-bold pointer-events-none">
-                                            {field.avgScore}
+                            <div className="relative h-full flex items-end justify-between px-2 gap-1.5 md:gap-3">
+                                {fieldAverages.map(f => (
+                                    <div key={f.id} className="flex flex-col items-center flex-1 group">
+                                        <div className="w-full max-w-[35px] rounded-t-sm transition-all duration-1000 shadow-sm"
+                                             style={{ height: `${Math.max(f.avgScore, 4)}%`, backgroundColor: f.hex }}>
                                         </div>
-                                        <div 
-                                            className={`w-full max-w-[32px] rounded-t-sm transition-all duration-1000 ease-out flex items-start justify-center pt-2 ${field.color} shadow-sm group-hover:brightness-110`}
-                                            style={{ height: `${Math.max(field.avgScore, 2)}%` }} 
-                                        >
-                                            {field.avgScore > 20 && <span className="text-white text-[10px] font-black">{field.avgScore}</span>}
-                                        </div>
-                                        <span className="text-[10px] font-bold text-slate-500 mt-2">{field.id}</span>
+                                        <span className="text-[10px] font-black text-slate-400 mt-3 uppercase tracking-tighter">{f.labelShort}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
               </div>
 
-              {warningStudents.length > 0 && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 shadow-sm">
-                  <h3 className="text-red-700 font-bold text-lg mb-4 flex items-center gap-2">
-                    <Icon name="fa-regular fa-bell animate-bounce" size={20} /> 
-                    Sistem Peringatan Dini: Siswa Perlu Perhatian Khusus
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {warningStudents.map(student => (
-                      <div key={student.id} className="bg-white p-4 rounded-lg border border-red-100 shadow-sm flex flex-col justify-between">
-                        <div>
-                          <div className="font-bold text-slate-800 text-sm">{student.name}</div>
-                          <div className="text-xs text-slate-500 uppercase">{student.field}</div>
-                        </div>
-                        <div className="mt-3 text-xs font-medium text-red-600 space-y-1">
-                          {student.belumCount >= 3 && <div>• {student.belumCount} materi menumpuk (Belum Dikuasai)</div>}
-                          {student.pendalamanCount >= 2 && <div>• {student.pendalamanCount} materi butuh (Pendalaman)</div>}
-                          {(student.avgScore > 0 && student.avgScore < 60) && <div>• Rata-rata skor rendah ({student.avgScore})</div>}
-                        </div>
+              {/* TIGA KARTU STATUS (BAWAH) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-[6px] border-l-emerald-500 flex flex-col justify-between relative overflow-hidden">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Aman</div>
+                      <div className="flex flex-col">
+                        <span className="text-5xl font-black text-slate-800">{pctAman}%</span>
+                        <span className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{stats.aman} dari {stats.total} Materi Pokok</span>
                       </div>
-                    ))}
+                      <div className="absolute top-6 right-6 text-emerald-500 bg-emerald-50 w-8 h-8 rounded-full flex items-center justify-center border border-emerald-100"><Icon name="fa-solid fa-check text-sm" /></div>
                   </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {STATUS_TYPES.map(type => (
-                  <div key={type.id} className="bg-white p-6 rounded-xl shadow-sm border-l-4" style={{ borderColor: type.hex }}>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-bold uppercase text-xs tracking-wider">{type.label}</span>
-                      <div style={{ color: type.hex }}>{type.icon}</div>
-                    </div>
-                    <div className="text-4xl font-black mt-2 text-slate-800">
-                      {stats.total > 0 ? Math.round((stats[type.id] / stats.total) * 100) : 0}%
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1">{stats[type.id]} dari {stats.total} Materi Pokok</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                  <Icon name="fa-solid fa-chart-column" size={20} className="text-indigo-600" /> 
-                  Progres Detail Siswa ({filteredStudents.length} Delegasi)
-                </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
-                  {filteredStudents.map(student => {
-                    const studentProg = progressData[student.id] || {};
-                    const syllabusLen = SYLLABUS_DB[student.field].length;
-                    const stStats = getStudentStats(studentProg);
-                    const amanCount = Object.values(studentProg).filter(v => (v.status || v) === 'aman').length;
-                    const pendalamanCount = Object.values(studentProg).filter(v => (v.status || v) === 'pendalaman').length;
-                    const percentAman = Math.round((amanCount / syllabusLen) * 100);
-                    const percentPendalaman = Math.round((pendalamanCount / syllabusLen) * 100);
-                    const fieldColor = FIELDS.find(f => f.id === student.field)?.color || 'bg-slate-800';
-
-                    return (
-                      <div key={student.id} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 hover:border-indigo-300 transition-colors">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] text-white px-2 py-0.5 rounded font-bold ${fieldColor}`}>{student.field}</span>
-                            <div>
-                              <div className="font-bold text-slate-800 text-sm leading-tight">{student.name}</div>
-                              <div className="flex gap-3 mt-1 text-[11px] font-bold text-slate-500">
-                                <span className="flex items-center gap-1"><Icon name="fa-regular fa-clock" size={12}/> {stStats.totalDuration} Jam</span>
-                                <span className="flex items-center gap-1"><Icon name="fa-solid fa-award" size={12}/> Avg Skor: {stStats.avgScore}</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-slate-800">{percentAman}%</span>
-                          </div>
-                        </div>
-                        <div className="h-2.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
-                          <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${percentAman}%` }}></div>
-                          <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${percentPendalaman}%` }}></div>
-                        </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-[6px] border-l-amber-500 flex flex-col justify-between relative overflow-hidden">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Pendalaman</div>
+                      <div className="flex flex-col">
+                        <span className="text-5xl font-black text-slate-800">{pctPendalaman}%</span>
+                        <span className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{stats.pendalaman} dari {stats.total} Materi Pokok</span>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="absolute top-6 right-6 text-amber-500 bg-amber-50 w-8 h-8 rounded-full flex items-center justify-center border border-amber-100"><Icon name="fa-solid fa-question text-sm" /></div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-[6px] border-l-rose-500 flex flex-col justify-between relative overflow-hidden">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Belum Dikuasai</div>
+                      <div className="flex flex-col">
+                        <span className="text-5xl font-black text-slate-800">{pctBelum}%</span>
+                        <span className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{stats.belum} dari {stats.total} Materi Pokok</span>
+                      </div>
+                      <div className="absolute top-6 right-6 text-rose-500 bg-rose-50 w-8 h-8 rounded-full flex items-center justify-center border border-rose-100"><Icon name="fa-solid fa-exclamation text-sm" /></div>
+                  </div>
               </div>
             </div>
           );
@@ -637,671 +852,485 @@
         // ==========================================
         // KOMPONEN: CEKLIS & LOGBOOK
         // ==========================================
-        const TopicCard = ({ studentId, topic, currentData, onSave }) => {
+        const TopicCard = ({ student, topic, currentData, onSave, canEdit }) => {
           const [isExpanded, setIsExpanded] = useState(false);
-          const status = typeof currentData === 'object' ? (currentData?.status || 'belum') : (currentData || 'belum');
-          const initialScore = typeof currentData === 'object' ? (currentData?.score || '') : '';
-          const initialDuration = typeof currentData === 'object' ? (currentData?.duration || '') : '';
-          const initialNotes = typeof currentData === 'object' ? (currentData?.notes || '') : '';
-          const timestamp = typeof currentData === 'object' ? currentData?.updatedAt : null;
-
-          const [score, setScore] = useState(initialScore);
-          const [duration, setDuration] = useState(initialDuration);
-          const [notes, setNotes] = useState(initialNotes);
-
-          const hasNotes = initialScore || initialDuration || initialNotes;
-          const titleParts = topic.title.split(': ');
-          const dayLabel = titleParts[0];
-          const topicName = titleParts[1] || '';
-
-          const handleStatusChange = (newStatus) => {
-            onSave(studentId, topic.id, { status: newStatus, score, duration, notes, updatedAt: new Date().toISOString() });
-          };
-
-          const handleSaveDetails = () => {
-            onSave(studentId, topic.id, { status, score, duration, notes, updatedAt: new Date().toISOString() });
-            setIsExpanded(false);
-          };
-
-          const formattedTime = timestamp ? new Date(timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+          const status = currentData?.status || currentData || 'belum';
+          const [score, setScore] = useState(currentData?.score || '');
+          const [duration, setDuration] = useState(currentData?.duration || '');
+          const [notes, setNotes] = useState(currentData?.notes || '');
+          const hasNotes = score || duration || notes;
 
           return (
-            <div className={`flex flex-col p-3 md:p-4 bg-white rounded-lg border transition-all ml-2 md:ml-4 ${isExpanded ? 'border-indigo-600 shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2 md:gap-3">
-                <div className="flex items-start gap-2 md:gap-3 flex-grow min-w-0">
-                  <Icon name="fa-solid fa-book-open" size={14} className="text-indigo-400 mt-1 shrink-0"/>
-                  <div className="min-w-0">
-                    <span className="font-black text-indigo-700 mr-1 text-xs md:text-sm">{dayLabel}:</span>
-                    <span className="font-medium text-slate-700 text-xs md:text-sm">{topicName}</span>
+            <div className={`p-4 bg-white rounded-lg border transition-all ${isExpanded ? 'border-indigo-600 shadow-md' : 'border-slate-200'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3 flex-grow text-left">
+                  <Icon name="fa-solid fa-book-bookmark text-indigo-400 mt-1 shrink-0" />
+                  <div>
+                    <div className="text-sm font-bold text-slate-700">{topic.title}</div>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-1.5 md:gap-2 shrink-0 pl-5 md:pl-7 xl:pl-0">
+                <div className="flex flex-wrap gap-2 shrink-0">
                   {STATUS_TYPES.map(type => (
-                    <button
-                      key={type.id}
-                      onClick={() => handleStatusChange(type.id)}
-                      className={`flex items-center justify-center px-2 md:px-3 py-1 md:py-1.5 rounded text-[10px] md:text-xs font-bold transition-all ${
-                        status === type.id 
-                        ? `${type.color} text-white shadow-md` 
-                        : 'bg-slate-50 text-slate-400 border border-slate-200 hover:border-slate-400 hover:text-slate-600'
-                      }`}
+                    <button 
+                        key={type.id} 
+                        onClick={() => canEdit && onSave(student.id, topic.id, { status: type.id, score, duration, notes, updatedAt: new Date().toISOString() })}
+                        disabled={!canEdit}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                            status === type.id 
+                            ? `${type.color} text-white shadow-md` 
+                            : `bg-slate-50 text-slate-400 border border-slate-200 ${canEdit ? 'hover:bg-slate-100' : 'opacity-50 cursor-not-allowed'}`
+                        }`}
                     >
                       {type.label}
                     </button>
                   ))}
-                  <div className="w-px h-5 bg-slate-200 mx-0.5 hidden xl:block"></div>
-                  <button 
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className={`flex items-center gap-1 px-2 md:px-3 py-1 md:py-1.5 rounded text-[10px] md:text-xs font-bold transition-all border ${
-                      isExpanded || hasNotes
-                      ? 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100'
-                      : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Icon name="fa-regular fa-message" size={12} className={hasNotes && !isExpanded ? 'text-indigo-600' : ''} />
-                    Logbook
-                    <Icon name="fa-solid fa-chevron-down" size={11} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  <button onClick={() => setIsExpanded(!isExpanded)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all ${isExpanded || hasNotes ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-500 border-slate-200'}`}>
+                    <Icon name="fa-regular fa-comment-dots mr-1" /> Logbook
                   </button>
                 </div>
               </div>
+
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-slate-100 pl-7 animate-in fade-in slide-in-from-top-2">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
-                        <Icon name="fa-regular fa-clock" size={14} /> Durasi Belajar (Jam)
-                      </label>
-                      <input 
-                        type="number" step="0.5" placeholder="Misal: 2.5" 
-                        className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                        value={duration} onChange={(e) => setDuration(e.target.value)}
-                      />
+                <div className="mt-4 pt-4 border-t border-slate-100 space-y-3 animate-in slide-in-from-top-2 text-left">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Durasi (Jam)</label>
+                        <input type="number" disabled={!canEdit} placeholder="Jam" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={duration} onChange={e => setDuration(e.target.value)} />
                     </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
-                        <Icon name="fa-solid fa-award" size={14} /> Skor Latihan
-                      </label>
-                      <input 
-                        type="text" placeholder="Misal: 15/20 atau 85" 
-                        className="w-full text-sm p-2 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                        value={score} onChange={(e) => setScore(e.target.value)}
-                      />
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Skor Latihan</label>
+                        <input type="text" disabled={!canEdit} placeholder="Skor" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={score} onChange={e => setScore(e.target.value)} />
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wider">
-                      <Icon name="fa-solid fa-circle-exclamation" size={14} /> Kendala / Topik Sulit
-                    </label>
-                    <textarea 
-                      rows="3" placeholder="Catat kesulitan siswa di sini..."
-                      className="w-full text-sm p-2.5 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-600 resize-none"
-                      value={notes} onChange={(e) => setNotes(e.target.value)}
-                    ></textarea>
+                  <div className="space-y-1">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kendala / Catatan</label>
+                      <textarea disabled={!canEdit} placeholder="Tulis kesulitan santri di sini..." className={`w-full p-3 bg-slate-50 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} rows="2" value={notes} onChange={e => setNotes(e.target.value)}></textarea>
                   </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                      {formattedTime && <><Icon name="fa-solid fa-calendar-check" size={12}/> Update: {formattedTime}</>}
-                    </span>
-                    <button 
-                      onClick={handleSaveDetails}
-                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-bold shadow-sm transition-colors"
-                    >
-                      <Icon name="fa-regular fa-floppy-disk" size={16} /> Simpan Logbook
-                    </button>
-                  </div>
+                  {canEdit ? (
+                      <button onClick={() => { onSave(student.id, topic.id, { status, score, duration, notes, updatedAt: new Date().toISOString() }); setIsExpanded(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-lg text-xs font-black shadow-md hover:bg-indigo-700 transition-colors uppercase tracking-widest mt-2">Simpan Logbook</button>
+                  ) : (
+                      <div className="text-center text-[10px] font-bold text-rose-500 mt-2 bg-rose-50 p-2 rounded-lg border border-rose-100"><Icon name="fa-solid fa-lock" /> Hanya pembimbing {student.field} yang dapat mengedit data ini.</div>
+                  )}
                 </div>
               )}
             </div>
           );
         };
 
-        const ChecklistView = ({ user, progressData, setProgressData, activeField, isDemo }) => {
-          const [selectedStudent, setSelectedStudent] = useState(null);
-          const [isSaving, setIsSaving] = useState(false);
-          const [searchTerm, setSearchTerm] = useState("");
-          const [showNeedsAttentionOnly, setShowNeedsAttentionOnly] = useState(false);
+        const ChecklistView = ({ progressData, activeField, appUser }) => {
+            const [selectedId, setSelectedId] = useState(null);
+            const [search, setSearch] = useState("");
+            const [hideAman, setHideAman] = useState(false);
 
-          const filteredStudents = useMemo(() => {
-            let list = activeField === 'ALL' ? DELEGASI : DELEGASI.filter(s => s.field === activeField);
-            if (searchTerm) {
-              const lowerQuery = searchTerm.toLowerCase();
-              list = list.filter(s => s.name.toLowerCase().includes(lowerQuery));
+            const filtered = DELEGASI.filter(s => (activeField === 'ALL' || s.field === activeField) && s.name.toLowerCase().includes(search.toLowerCase()));
+
+            if (selectedId) {
+                const s = DELEGASI.find(x => x.id === selectedId);
+                const p = progressData[selectedId] || {};
+                const syllabus = hideAman ? SYLLABUS_DB[s.field].filter(t => (p[t.id]?.status || p[t.id]) !== 'aman') : SYLLABUS_DB[s.field];
+                
+                const canEdit = appUser.role === 'admin' || (appUser.role === 'guru' && appUser.field === s.field);
+
+                return (
+                    <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border animate-in slide-in-from-right-4 pb-24">
+                        <button onClick={() => setSelectedId(null)} className="text-[#5b51d8] font-bold text-sm mb-6 flex items-center gap-2"><Icon name="fa-solid fa-arrow-left" /> Kembali ke Daftar Siswa</button>
+                        
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-slate-100 pb-6 gap-4">
+                            <div>
+                                <h3 className="text-2xl md:text-3xl font-black text-slate-800 mb-2">{s.name}</h3>
+                                <p className="text-xs text-slate-400 uppercase font-black tracking-widest">Bidang: {s.field} • Progres Silabus 30 Hari</p>
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-2.5 px-4 rounded-xl border border-slate-200 shadow-sm">
+                                <input type="checkbox" checked={hideAman} onChange={e => setHideAman(e.target.checked)} className="w-4 h-4 text-indigo-600 rounded" />
+                                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sembunyikan Aman</span>
+                            </label>
+                        </div>
+
+                        {!canEdit && (
+                            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6 text-xs font-bold flex items-center gap-3">
+                                <Icon name="fa-solid fa-eye text-lg text-amber-500" />
+                                Mode Baca: Bapak/Ibu hanya bisa melihat progres karena siswa ini berada di bidang {s.field}.
+                            </div>
+                        )}
+
+                        <div className="space-y-4">
+                            {syllabus.length === 0 ? (
+                                <div className="text-center py-10 text-slate-400 font-bold text-sm"><Icon name="fa-solid fa-check-double text-4xl mb-3 text-emerald-400 block mx-auto" /> Semua materi sudah berstatus Aman!</div>
+                            ) : (
+                                syllabus.map(t => <TopicCard key={t.id} student={s} topic={t} currentData={p[t.id]} canEdit={canEdit} onSave={async (sid, tid, d) => await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'progress', sid), { ...progressData[sid], [tid]: d })} />)
+                            )}
+                        </div>
+                    </div>
+                );
             }
-            return list;
-          }, [activeField, searchTerm]);
-
-          const handleSaveTopicData = async (studentId, topicId, dataObj) => {
-            setIsSaving(true);
-            const studentProg = progressData[studentId] || {};
-            const newProg = { ...studentProg, [topicId]: dataObj };
-            
-            if (!isDemo && user) {
-                try {
-                  await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'progress', studentId), newProg);
-                } catch (err) { console.error(err); }
-            } else {
-                // Mode demo (Tanpa Firebase Valid) - Simpan di memori sementara
-                setProgressData(prev => ({ ...prev, [studentId]: newProg }));
-            }
-            setIsSaving(false);
-          };
-
-          if (selectedStudent) {
-            const student = DELEGASI.find(s => s.id === selectedStudent);
-            const studentProg = progressData[selectedStudent] || {};
-            const syllabus = SYLLABUS_DB[student.field];
-            
-            const displayedSyllabus = showNeedsAttentionOnly 
-              ? syllabus.filter(t => {
-                  const stat = typeof studentProg[t.id] === 'object' ? studentProg[t.id].status : studentProg[t.id];
-                  return stat !== 'aman';
-                })
-              : syllabus;
-
-            const groupedSyllabus = displayedSyllabus.reduce((acc, topic) => {
-              if (!acc[topic.cat]) acc[topic.cat] = [];
-              acc[topic.cat].push(topic);
-              return acc;
-            }, {});
-
-            const fieldMeta = FIELDS.find(f => f.id === student.field);
 
             return (
-              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-                <button onClick={() => { setSelectedStudent(null); setShowNeedsAttentionOnly(false); }} className="text-indigo-600 font-bold flex items-center gap-2 hover:-translate-x-1 transition-transform">
-                  <Icon name="fa-solid fa-chevron-left" size={20} /> Kembali ke Daftar Siswa
-                </button>
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                  <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6 gap-4 border-b border-slate-100 pb-6">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className={`${fieldMeta.color} text-white px-3 py-1 rounded-full text-xs font-bold tracking-widest`}>OSN {fieldMeta.label}</span>
-                        <span className={`text-xs font-bold px-2 py-1 rounded ${student.initialStatus === 'Aktif' ? 'bg-emerald-100 text-emerald-700' : student.initialStatus === 'Stagnan' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}`}>Status Awal: {student.initialStatus}</span>
-                      </div>
-                      <h3 className="text-3xl font-black text-slate-800">{student.name}</h3>
+                <div className="space-y-6 pb-24">
+                    <div className="relative">
+                        <Icon name="fa-solid fa-magnifying-glass" className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input type="text" placeholder="Cari nama siswa..." className="w-full p-4 pl-12 rounded-2xl border border-slate-200 shadow-sm focus:ring-2 focus:ring-[#5b51d8] outline-none text-sm font-bold text-slate-700" value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
-                    <div className="flex flex-col items-end gap-3">
-                       {isSaving && <div className="text-xs bg-indigo-50 border border-indigo-100 text-indigo-600 px-4 py-2 rounded-full animate-pulse font-bold flex items-center gap-2"><Icon name="fa-regular fa-square-check" size={14}/> Menyimpan...</div>}
-                       <label className="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors">
-                          <input type="checkbox" className="w-4 h-4 text-indigo-600 rounded border-slate-300" checked={showNeedsAttentionOnly} onChange={(e) => setShowNeedsAttentionOnly(e.target.checked)} />
-                          <span className="text-sm font-bold text-slate-600">Sembunyikan Materi Aman</span>
-                       </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filtered.map(s => (
+                            <button key={s.id} onClick={() => setSelectedId(s.id)} className="bg-white p-5 rounded-2xl border border-slate-100 hover:border-[#5b51d8] text-left transition-all group shadow-sm">
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className={`text-white text-[9px] px-2.5 py-1 rounded font-black uppercase tracking-widest ${FIELDS.find(f => f.id === s.field).color}`}>{s.field}</span>
+                                    <Icon name="fa-solid fa-chevron-right text-slate-200 group-hover:text-[#5b51d8] transition-all" />
+                                </div>
+                                <div className="font-bold text-slate-800 text-sm group-hover:text-[#5b51d8]">{s.name}</div>
+                            </button>
+                        ))}
                     </div>
-                  </div>
-                  <div className="space-y-10">
-                    {Object.keys(groupedSyllabus).length === 0 ? (
-                      <div className="text-center py-10 text-slate-400 font-medium">
-                        <Icon name="fa-solid fa-circle-check" size={48} className="mx-auto text-emerald-400 mb-3 opacity-50 block" />
-                        Semua materi di bidang ini sudah berstatus AMAN.
-                      </div>
-                    ) : (
-                      Object.keys(groupedSyllabus).map(cat => (
-                        <div key={cat} className="space-y-3">
-                          <h4 className="font-bold text-slate-500 text-sm uppercase tracking-widest border-l-4 border-indigo-600 pl-3 py-1 bg-slate-50 rounded-r-lg">Topik Pokok: {cat}</h4>
-                          <div className="grid gap-2">
-                            {groupedSyllabus[cat].map(topic => (
-                              <TopicCard key={topic.id} studentId={student.id} topic={topic} currentData={studentProg[topic.id]} onSave={handleSaveTopicData} />
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
                 </div>
-              </div>
             );
-          }
-
-          return (
-            <div className="animate-in fade-in duration-500 space-y-6">
-              <div className="relative max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Icon name="fa-solid fa-magnifying-glass" size={18} className="text-slate-400" />
-                </div>
-                <input type="text" placeholder="Cari nama siswa..." className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-600 shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredStudents.length > 0 ? filteredStudents.map(student => {
-                  const fieldMeta = FIELDS.find(f => f.id === student.field);
-                  return (
-                    <button key={student.id} onClick={() => setSelectedStudent(student.id)} className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 hover:border-indigo-600 hover:shadow-md transition-all text-left flex flex-col group">
-                      <div className="flex justify-between items-start mb-4">
-                        <span className={`${fieldMeta.color} text-white text-[10px] font-bold px-2 py-1 rounded`}>{fieldMeta.label}</span>
-                        <Icon name="fa-solid fa-chevron-right" size={20} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-                      </div>
-                      <div className="font-bold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors mb-1">{student.name}</div>
-                      <div className="text-slate-400 text-xs">Update Silabus & Isi Logbook</div>
-                    </button>
-                  );
-                }) : (
-                  <div className="col-span-full py-12 text-center text-slate-400 font-medium bg-white rounded-xl border border-slate-200 border-dashed">Siswa dengan nama "{searchTerm}" tidak ditemukan.</div>
-                )}
-              </div>
-            </div>
-          );
         };
 
-        // ==========================================
-        // KOMPONEN: PUSAT KENDALA
-        // ==========================================
-        const IssuesView = ({ progressData, activeField }) => {
-          const issues = useMemo(() => {
-            let allIssues = [];
-            DELEGASI.forEach(student => {
-              if (activeField !== 'ALL' && student.field !== activeField) return;
-              const pData = progressData[student.id] || {};
-              const syllabus = SYLLABUS_DB[student.field];
-              syllabus.forEach(topic => {
-                const topicData = pData[topic.id];
-                if (topicData && typeof topicData === 'object' && topicData.notes && topicData.notes.trim() !== '') {
-                  allIssues.push({ student, topic, notes: topicData.notes, status: topicData.status, date: topicData.updatedAt ? new Date(topicData.updatedAt) : new Date(0) });
+        const IssuesView = ({ progressData }) => {
+          const [expandedGroups, setExpandedGroups] = useState({});
+
+          const groupedIssues = useMemo(() => {
+            const groups = [];
+            DELEGASI.forEach(s => {
+              const p = progressData[s.id] || {};
+              const studentIssues = [];
+              
+              Object.keys(p).forEach(tid => {
+                if (p[tid]?.notes && p[tid].notes.trim() !== '') {
+                  studentIssues.push({
+                    topicId: tid,
+                    data: p[tid],
+                    title: SYLLABUS_DB[s.field]?.find(x => x.id === tid)?.title || `Materi ${tid}`
+                  });
                 }
               });
+
+              if (studentIssues.length > 0) {
+                studentIssues.sort((a,b) => new Date(b.data.updatedAt) - new Date(a.data.updatedAt));
+                groups.push({
+                  student: s,
+                  issues: studentIssues,
+                  latestUpdate: studentIssues[0].data.updatedAt
+                });
+              }
             });
-            return allIssues.sort((a, b) => b.date - a.date);
-          }, [progressData, activeField]);
+            return groups.sort((a,b) => new Date(b.latestUpdate) - new Date(a.latestUpdate));
+          }, [progressData]);
+
+          const toggleExpand = (studentId) => {
+            setExpandedGroups(prev => ({ ...prev, [studentId]: !prev[studentId] }));
+          };
 
           return (
-            <div className="animate-in fade-in duration-500 space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
-                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Icon name="fa-regular fa-comments" size={24} className="text-indigo-600" /> Inbox Pusat Kendala Pembelajaran</h3>
-                   <span className="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-full text-xs">Total Laporan: {issues.length}</span>
-                </div>
-                {issues.length === 0 ? (
-                  <div className="text-center py-16 text-slate-400">
-                    <Icon name="fa-solid fa-circle-check" size={64} className="mx-auto text-slate-200 mb-4 block" />
-                    <p className="font-medium text-lg">Belum ada catatan kendala dari pembimbing.</p>
-                    <p className="text-sm">Semua proses belajar berjalan lancar!</p>
+            <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm pb-24">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
+                  <div className="flex items-center gap-3">
+                      <Icon name="fa-regular fa-comments text-2xl text-indigo-600" />
+                      <h3 className="font-black text-slate-800 text-xl tracking-tight">Inbox Kendala Pembelajaran</h3>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {issues.map((issue, idx) => {
-                      const fieldColor = FIELDS.find(f => f.id === issue.student.field)?.color || 'bg-slate-800';
-                      const statusColor = issue.status === 'belum' ? 'text-rose-500' : issue.status === 'pendalaman' ? 'text-amber-500' : 'text-emerald-500';
-                      return (
-                        <div key={idx} className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:shadow-md transition-shadow flex flex-col">
-                          <div className="flex justify-between items-start mb-3">
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[10px] text-white px-2 py-0.5 rounded font-bold ${fieldColor}`}>{issue.student.field}</span>
-                              <span className="font-bold text-slate-800 text-sm">{issue.student.name}</span>
+                  <div className="hidden sm:block bg-slate-100 text-slate-600 font-bold px-3 py-1.5 rounded-lg text-[10px] uppercase tracking-widest">
+                      Total: {groupedIssues.reduce((acc, curr) => acc + curr.issues.length, 0)} Laporan
+                  </div>
+              </div>
+
+              {groupedIssues.length === 0 ? (
+                  <p className="text-center py-16 text-slate-400 text-sm italic font-medium">Belum ada catatan kendala dari pembimbing.</p>
+              ) : (
+                <div className="space-y-4 text-left">
+                    {groupedIssues.map((group) => {
+                        const isExpanded = expandedGroups[group.student.id];
+                        const fieldColor = FIELDS.find(f => f.id === group.student.field)?.color || 'bg-slate-800';
+
+                        return (
+                            <div key={group.student.id} className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden transition-all hover:border-[#5b51d8] shadow-sm">
+                                <button 
+                                    onClick={() => toggleExpand(group.student.id)} 
+                                    className="w-full p-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
+                                >
+                                    <div className="flex items-center gap-3 overflow-hidden text-left">
+                                        <span className={`text-[9px] text-white px-2 py-1 rounded font-black uppercase tracking-widest shrink-0 ${fieldColor}`}>
+                                            {group.student.field}
+                                        </span>
+                                        <div className="font-bold text-slate-800 text-sm md:text-base truncate">{group.student.name}</div>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0 ml-2">
+                                        <span className="text-[10px] font-bold bg-rose-100 text-rose-600 px-2.5 py-1 rounded-lg border border-rose-200 shadow-sm whitespace-nowrap">
+                                            {group.issues.length} Kendala
+                                        </span>
+                                        <Icon name={`fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-slate-400 transition-transform`} />
+                                    </div>
+                                </button>
+
+                                {isExpanded && (
+                                    <div className="p-4 border-t border-slate-200 space-y-3 bg-slate-50/50 animate-in slide-in-from-top-2">
+                                        {group.issues.map((iss, i) => (
+                                            <div key={i} className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+                                                <div className="flex justify-between items-start mb-2 gap-4">
+                                                    <div className="text-xs font-black text-[#5b51d8] leading-tight">{iss.title}</div>
+                                                    <span className="text-slate-400 text-[9px] font-bold uppercase tracking-widest shrink-0 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                                                        {new Date(iss.data.updatedAt).toLocaleDateString('id-ID', { day:'numeric', month:'short' })}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm italic text-slate-600 leading-relaxed font-medium">"{iss.data.notes}"</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                            <span className="text-[10px] text-slate-400 font-medium">{issue.date.getTime() > 0 ? issue.date.toLocaleDateString('id-ID', { day:'numeric', month:'short' }) : ''}</span>
-                          </div>
-                          <div className="text-xs font-bold text-indigo-700 mb-2 border-b border-slate-200 pb-2">{issue.topic.title}</div>
-                          <div className="flex-grow"><p className="text-sm text-slate-600 italic">"{issue.notes}"</p></div>
-                          <div className="mt-4 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider">
-                            Status Topik: <span className={statusColor}>{issue.status === 'belum' ? 'Belum Dikuasai' : issue.status}</span>
-                          </div>
-                        </div>
-                      );
+                        );
                     })}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         };
 
-        // ==========================================
-        // KOMPONEN: LEADERBOARD
-        // ==========================================
-        const LeaderboardView = ({ progressData, activeField }) => {
-          const rankedStudents = useMemo(() => {
-            let list = activeField === 'ALL' ? DELEGASI : DELEGASI.filter(s => s.field === activeField);
-            let scoredList = list.map(student => {
-              const pData = progressData[student.id] || {};
-              const stats = getStudentStats(pData);
-              return { ...student, ...stats };
-            });
-            return scoredList.sort((a, b) => {
-              if (b.avgScore !== a.avgScore) return b.avgScore - a.avgScore;
-              return b.totalDuration - a.totalDuration;
-            });
-          }, [progressData, activeField]);
-
+        const LeaderboardView = ({ progressData }) => {
+          const ranked = DELEGASI.map(s => ({ ...s, ...getStudentStats(progressData[s.id] || {}) }))
+                                .sort((a, b) => b.avgScore - a.avgScore || b.totalDuration - a.totalDuration);
           return (
-            <div className="animate-in fade-in duration-500 space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-4">
-                   <h3 className="text-xl font-black text-slate-800 flex items-center gap-2"><Icon name="fa-solid fa-trophy" size={24} className="text-indigo-600" /> Papan Peringkat Delegasi (Leaderboard)</h3>
-                </div>
-                <div className="space-y-3">
-                  {rankedStudents.map((student, idx) => {
-                    const fieldMeta = FIELDS.find(f => f.id === student.field);
-                    const isTop3 = idx < 3;
-                    let rankBadge = "bg-slate-100 text-slate-500";
-                    if (idx === 0) rankBadge = "bg-yellow-400 text-white shadow-md shadow-yellow-200";
-                    else if (idx === 1) rankBadge = "bg-slate-300 text-slate-700 shadow-md";
-                    else if (idx === 2) rankBadge = "bg-amber-600 text-white shadow-md shadow-amber-900/20";
-
-                    return (
-                      <div key={student.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${isTop3 ? 'border-indigo-600/20 bg-indigo-50/30' : 'border-slate-100 bg-white hover:bg-slate-50'}`}>
-                        <div className="flex items-center gap-4">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${rankBadge}`}>{idx + 1}</div>
-                          <div>
-                            <div className="font-bold text-slate-800 text-sm md:text-base flex items-center gap-2">
-                              {student.name}
-                              <span className={`${fieldMeta.color} text-white text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider`}>{fieldMeta.id}</span>
-                            </div>
-                            <div className="text-xs text-slate-400 mt-0.5">Status: {student.initialStatus}</div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6">
-                          <div className="hidden md:flex flex-col items-end">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Durasi</span>
-                            <span className="font-bold text-slate-700 flex items-center gap-1"><Icon name="fa-regular fa-clock" size={14} className="text-slate-400"/> {student.totalDuration} Jam</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Rata-rata Skor</span>
-                            <span className={`font-black text-lg ${isTop3 ? 'text-indigo-600' : 'text-slate-700'}`}>{student.avgScore}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            <div className="bg-white p-4 md:p-6 rounded-2xl border border-slate-100 shadow-sm pb-24">
+              <div className="flex items-center gap-3 border-b border-slate-100 pb-6 mb-6">
+                  <Icon name="fa-solid fa-trophy text-2xl text-amber-500" />
+                  <h3 className="font-black text-slate-800 text-xl tracking-tight">Papan Peringkat</h3>
               </div>
-            </div>
-          );
-        };
-
-        // ==========================================
-        // KOMPONEN: PUSAT UNDUHAN
-        // ==========================================
-        const DownloadsView = () => {
-          const RESOURCES = [
-            {
-              category: "Dokumen Resmi & Silabus",
-              desc: "Panduan dan regulasi resmi dari Puspresnas Kemendikbud",
-              items: [
-                { title: "Buku Pedoman OSN 2026", type: "PDF", size: "2.4 MB", icon: <Icon name="fa-regular fa-file-lines" size={24} className="text-rose-500" />, action: "Download" },
-                { title: "Silabus Materi Seluruh Bidang", type: "PDF", size: "1.8 MB", icon: <Icon name="fa-regular fa-file-lines" size={24} className="text-rose-500" />, action: "Download" },
-                { title: "SOP Pembimbing MA Nurul Jadid", type: "PDF", size: "850 KB", icon: <Icon name="fa-regular fa-file-lines" size={24} className="text-blue-500" />, action: "Download" }
-              ]
-            },
-            {
-              category: "Arsip Bank Soal & Pembahasan",
-              desc: "Kumpulan soal asli OSN Kabupaten, Provinsi, dan Nasional",
-              items: [
-                { title: "Bank Soal Matematika (2020-2025)", type: "ZIP", size: "15 MB", icon: <Icon name="fa-solid fa-box-archive" size={24} className="text-amber-500" />, action: "Download" },
-                { title: "Bank Soal IPA (Bio, Fis, Kim)", type: "ZIP", size: "42 MB", icon: <Icon name="fa-solid fa-box-archive" size={24} className="text-amber-500" />, action: "Download" },
-                { title: "Bank Soal IPS (Eko, Geo)", type: "ZIP", size: "28 MB", icon: <Icon name="fa-solid fa-box-archive" size={24} className="text-amber-500" />, action: "Download" },
-                { title: "Kunci & Pembahasan Terpadu", type: "PDF", size: "5.5 MB", icon: <Icon name="fa-regular fa-file-lines" size={24} className="text-rose-500" />, action: "Download" }
-              ]
-            },
-            {
-              category: "Referensi Belajar Digital",
-              desc: "Tautan rekomendasi untuk sesi Akselerasi Digital (Siswa)",
-              items: [
-                { title: "Olympia Gold Academy (Strategi)", type: "LINK", size: "YouTube", icon: <Icon name="fa-brands fa-youtube" size={24} className="text-red-500" />, action: "Buka Tautan" },
-                { title: "Simulasi CBT Puspresnas Terpadu", type: "LINK", size: "Website", icon: <Icon name="fa-solid fa-arrow-up-right-from-square" size={24} className="text-indigo-500" />, action: "Buka Tautan" },
-                { title: "Materi E-book Perpusnas", type: "LINK", size: "Portal", icon: <Icon name="fa-solid fa-arrow-up-right-from-square" size={24} className="text-indigo-500" />, action: "Buka Tautan" }
-              ]
-            }
-          ];
-
-          return (
-            <div className="animate-in fade-in duration-500 space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                <div className="flex items-center justify-between mb-8 border-b border-slate-100 pb-4">
-                   <div>
-                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-2 mb-1"><Icon name="fa-solid fa-cloud-arrow-down" size={24} className="text-indigo-600" /> Pusat Referensi & Unduhan</h3>
-                     <p className="text-sm text-slate-500">Kumpulan modul, bank soal, dan tautan belajar resmi untuk pembimbing dan siswa.</p>
-                   </div>
-                </div>
-                <div className="space-y-10">
-                  {RESOURCES.map((section, idx) => (
-                    <div key={idx} className="space-y-4">
-                      <div>
-                        <h4 className="font-bold text-slate-700 text-lg">{section.category}</h4>
-                        <p className="text-xs text-slate-400">{section.desc}</p>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {section.items.map((item, itemIdx) => (
-                          <div key={itemIdx} className="flex flex-col justify-between p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-400 hover:shadow-md transition-all group">
-                            <div className="flex items-start gap-3 mb-4">
-                              <div className="p-2 bg-white rounded-lg shadow-sm">{item.icon}</div>
-                              <div>
-                                <h5 className="font-bold text-slate-800 text-sm leading-tight group-hover:text-indigo-600 transition-colors">{item.title}</h5>
-                                <span className="text-[10px] font-bold text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded mt-2 inline-block">{item.type} • {item.size}</span>
-                              </div>
+              <div className="space-y-3">
+                {ranked.map((s, i) => (
+                    <div key={s.id} className={`flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all ${i < 3 ? 'bg-indigo-50/40 border-indigo-100' : 'bg-white border-slate-100'}`}>
+                        <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                            <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shadow-sm shrink-0 ${i === 0 ? 'bg-yellow-400 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : i === 2 ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{i+1}</span>
+                            <div className="overflow-hidden text-left">
+                                <div className="text-xs md:text-sm font-bold text-slate-800 truncate">{s.name}</div>
+                                <div className="text-[8px] md:text-[9px] text-slate-400 uppercase font-black tracking-tighter">{s.field} • {s.totalDuration} JAM BELAJAR</div>
                             </div>
-                            <button onClick={() => alert(`Simulasi: Membuka/Mengunduh file "${item.title}"...`)} className="w-full py-2 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded-lg group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all flex items-center justify-center gap-2">
-                              <Icon name={item.type === 'LINK' ? 'fa-solid fa-arrow-up-right-from-square' : 'fa-solid fa-download'} size={14} /> {item.action}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                        </div>
+                        <div className="flex flex-col items-end shrink-0 ml-2">
+                            <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg Skor</span>
+                            <span className="text-base md:text-lg font-black text-indigo-600">{s.avgScore}</span>
+                        </div>
                     </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
           );
         };
 
+        const DownloadsView = ({ showAlert }) => (
+            <div className="bg-white p-4 md:p-6 rounded-2xl border space-y-6 shadow-sm pb-20">
+                <div className="flex items-center gap-3 border-b pb-4">
+                  <Icon name="fa-solid fa-cloud-arrow-down text-2xl text-indigo-600" />
+                  <h3 className="font-black text-slate-800 text-xl tracking-tight">Unduhan & Referensi</h3>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      { t: "Buku Pedoman OSN 2026", i: "fa-file-pdf text-rose-500", s: "2.4 MB" }, 
+                      { t: "Silabus Seluruh Bidang", i: "fa-file-pdf text-rose-500", s: "1.8 MB" },
+                      { t: "Arsip Soal Matematika", i: "fa-file-zipper text-amber-500", s: "15 MB" }, 
+                      { t: "Arsip Soal IPA (BIO/FIS/KIM)", i: "fa-file-zipper text-amber-500", s: "42 MB" },
+                      { t: "Arsip Soal IPS (EKO/GEO)", i: "fa-file-zipper text-amber-500", s: "28 MB" },
+                      { t: "Strategi OSN (YouTube)", i: "fa-brands fa-youtube text-red-500", s: "Link" }
+                    ].map((d, i) => (
+                        <div key={i} className="p-4 bg-slate-50 border border-slate-200 rounded-xl hover:border-indigo-600 hover:bg-white transition-all cursor-pointer group text-left shadow-sm" onClick={() => showAlert("Fitur unduhan file nyata akan segera diaktifkan!")}>
+                            <Icon name={`fa-solid ${d.i} text-3xl mb-4 block`} />
+                            <div className="text-xs md:text-sm font-bold text-slate-800 group-hover:text-indigo-600">{d.t}</div>
+                            <div className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{d.s}</div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+
         // ==========================================
-        // KOMPONEN UTAMA (APP)
+        // APP MAIN WRAPPER
         // ==========================================
         const App = () => {
-          const [user, setUser] = useState(null);
+          // Authentication & Data State
+          const [firebaseUser, setFirebaseUser] = useState(null);
+          const [appUser, setAppUser] = useState(null); // User profil dari login screen
+          const [progressData, setProgressData] = useState({});
+          const [attendanceData, setAttendanceData] = useState({});
+          const [loading, setLoading] = useState(true);
+          const [modalConfig, setModalConfig] = useState(null); // <-- TAMBAHAN UNTUK MODAL
+          
+          // UI State
           const [activeTab, setActiveTab] = useState('dashboard');
           const [activeField, setActiveField] = useState('ALL');
-          const [progressData, setProgressData] = useState({});
-          const [loading, setLoading] = useState(true);
-          const [showWarning, setShowWarning] = useState(false);
+          const [sidebarOpen, setSidebarOpen] = useState(false);
 
+          // Helper untuk memanggil Popup cantik kita
+          const showAlert = (message) => setModalConfig({ type: 'alert', message });
+          const showConfirm = (message, onConfirm) => setModalConfig({ type: 'confirm', message, onConfirm });
+
+          // 1. Firebase Anonymous Auth Initializer
           useEffect(() => {
-            if (!isFirebaseConfigured) {
-                // Berjalan dalam "Demo Mode" jika kunci Firebase masih menggunakan teks panduan
-                setLoading(false);
-                setShowWarning(true);
-                return;
-            }
-
-            const initAuth = async () => {
-              try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                  await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                  await signInAnonymously(auth);
-                }
-              } catch (err) { console.error("Auth error:", err); }
-            };
-            
-            initAuth();
-            const unsubscribeAuth = onAuthStateChanged(auth, (u) => setUser(u));
-            return () => unsubscribeAuth();
+            signInAnonymously(auth).catch(console.error);
+            return onAuthStateChanged(auth, setFirebaseUser);
           }, []);
 
+          // 2. Data Listeners (Progress & Attendance)
           useEffect(() => {
-            if (!isFirebaseConfigured || !user) return;
+            if (!firebaseUser) return;
+            
+            const unsubProgress = onSnapshot(query(collection(db, 'artifacts', appIdStr, 'public', 'data', 'progress')), (snap) => {
+              const d = {}; snap.forEach(doc => d[doc.id] = doc.data());
+              setProgressData(d);
+            });
 
-            const q = query(collection(db, 'artifacts', appIdStr, 'public', 'data', 'progress'));
-            const unsubscribeProgress = onSnapshot(q, (snapshot) => {
-              const data = {};
-              snapshot.forEach(doc => { data[doc.id] = doc.data(); });
-              setProgressData(data);
-              setLoading(false);
-            }, (err) => {
-              console.error("Firestore error:", err);
+            const unsubAttendance = onSnapshot(query(collection(db, 'artifacts', appIdStr, 'public', 'data', 'attendance')), (snap) => {
+              const d = {}; snap.forEach(doc => d[doc.id] = doc.data());
+              setAttendanceData(d);
               setLoading(false);
             });
 
-            return () => unsubscribeProgress();
-          }, [user]);
+            return () => { unsubProgress(); unsubAttendance(); };
+          }, [firebaseUser]);
 
-          if (loading) {
-            return (
-              <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-400 px-4">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-indigo-300 rounded-full animate-spin mb-4"></div>
-                <p className="font-bold animate-pulse text-center text-sm md:text-base">Menghubungkan ke server MANJ Prestisius...</p>
-              </div>
-            );
+          // Tampilkan loading spinner jika belum connect
+          if (loading) return (
+            <div className="min-h-screen flex flex-col items-center justify-center text-slate-400 bg-white p-6">
+                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4 shadow-lg shadow-indigo-100"></div>
+                <p className="font-black text-slate-500 animate-pulse text-sm uppercase tracking-widest">Menghubungkan Server MANJ Prestisius...</p>
+            </div>
+          );
+
+          // Tampilkan Login Screen jika belum login
+          if (!appUser) {
+              return <LoginScreen onLogin={setAppUser} />;
           }
 
+          // Main App UI (Setelah Login)
           return (
-            <div className="min-h-screen bg-slate-50 flex">
-              {/* Pesan Peringatan Mode Demo */}
-              {showWarning && (
-                  <div className="fixed top-0 left-0 w-full bg-amber-500 text-amber-950 font-bold p-3 text-center text-xs md:text-sm z-50 shadow-md">
-                      <Icon name="fa-solid fa-triangle-exclamation" className="mr-2" />
-                      <span className="hidden md:inline">MODE DEMO: Aplikasi belum terhubung ke database. Buka file <code>index.html</code> dan ganti konfigurasi Firebase agar data tidak hilang saat halaman dimuat ulang.</span>
-                      <span className="md:hidden">Mode Demo — Firebase belum dikonfigurasi.</span>
-                      <button onClick={() => setShowWarning(false)} className="ml-3 underline text-amber-900">Tutup</button>
-                  </div>
-              )}
+            <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-slate-50">
+              
+              {/* MODAL / ALERT CUSTOM KITA MUNCUL DI SINI */}
+              <CustomModal config={modalConfig} onClose={() => setModalConfig(null)} />
 
-              {/* ================================
-                  DESKTOP SIDEBAR (md ke atas)
-                  ================================ */}
-              <div className="hidden md:flex md:w-64 bg-slate-900 text-white flex-col fixed h-full z-20 shadow-xl" style={{ top: showWarning ? '48px' : '0' }}>
-                <div className="p-6 flex items-center gap-4">
-                  <div className="w-12 h-12 shrink-0 bg-white/10 rounded-xl p-1 flex items-center justify-center overflow-hidden">
-                    <img src="LOGO_MANJ.png" alt="Logo MA Nurul Jadid" className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/100x100/f59e0b/0f172a?text=NJ"; }} />
-                  </div>
-                  <div className="leading-tight">
-                    <div className="font-black text-lg text-white tracking-wide">MONITORING OSN</div>
-                    <div className="text-[11px] text-amber-500 font-bold uppercase tracking-wider mt-0.5">MA Nurul Jadid</div>
+              {/* BACKDROP MOBILE */}
+              {sidebarOpen && <div className="fixed inset-0 bg-slate-950/80 z-40 md:hidden animate-in fade-in" onClick={() => setSidebarOpen(false)}></div>}
+
+              {/* SIDEBAR */}
+              <div className={`fixed inset-y-0 left-0 w-64 bg-[#0f172a] text-white flex flex-col z-50 sidebar-transition transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 shadow-2xl`}>
+                <div className="p-8 flex flex-col items-start gap-4 border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl p-1 bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                        <img src="LOGO_MANJ.png" alt="Logo" className="w-full h-full object-contain" onError={e => {e.target.style.display='none'; e.target.nextSibling.style.display='block';}} />
+                        <span className="hidden font-black text-2xl text-amber-500">NJ</span>
+                    </div>
+                    <div>
+                        <div className="font-black text-base tracking-tighter leading-none">MONITORING OSN</div>
+                        <div className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-1">MA Nurul Jadid</div>
+                    </div>
                   </div>
                 </div>
-                <nav className="flex-grow mt-6 px-3 space-y-2 overflow-y-auto scrollbar-hide pb-20">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2">Menu Utama</div>
-                  <button onClick={() => setActiveTab('dashboard')} className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
-                    <Icon name="fa-solid fa-table-cells-large" size={22} /><span className="font-bold text-sm">Dashboard</span>
+
+                <nav className="flex-grow mt-8 px-4 space-y-2 overflow-y-auto scrollbar-hide pb-20">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4">Menu Utama</div>
+                  <button onClick={() => { setActiveTab('dashboard'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'dashboard' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                    <Icon name="fa-solid fa-table-cells-large text-lg" /> <span className="font-bold text-sm">Dashboard</span>
                   </button>
-                  <button onClick={() => setActiveTab('checklist')} className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all ${activeTab === 'checklist' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
-                    <Icon name="fa-regular fa-square-check" size={22} /><span className="font-bold text-sm">Update Progres</span>
+                  <button onClick={() => { setActiveTab('checklist'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'checklist' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                    <Icon name="fa-solid fa-square-check text-lg" /> <span className="font-bold text-sm">Update Progres</span>
                   </button>
-                  <div className="pt-6 pb-2">
-                     <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2">Analisis & Referensi</div>
-                     <button onClick={() => setActiveTab('issues')} className={`w-full flex items-center gap-4 p-3 mb-2 rounded-lg transition-all ${activeTab === 'issues' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
-                       <Icon name="fa-regular fa-comments" size={22} /><span className="font-bold text-sm">Pusat Kendala</span>
+                  <button onClick={() => { setActiveTab('attendance'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'attendance' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                    <Icon name="fa-solid fa-fingerprint text-lg" /> <span className="font-bold text-sm">Absensi Guru</span>
+                  </button>
+                  
+                  <div className="pt-8">
+                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-4 mb-4">Analisis & Referensi</div>
+                     <button onClick={() => { setActiveTab('issues'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'issues' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                       <Icon name="fa-solid fa-comments text-lg" /> <span className="font-bold text-sm">Pusat Kendala</span>
                      </button>
-                     <button onClick={() => setActiveTab('leaderboard')} className={`w-full flex items-center gap-4 p-3 mb-2 rounded-lg transition-all ${activeTab === 'leaderboard' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
-                       <Icon name="fa-solid fa-trophy" size={22} /><span className="font-bold text-sm">Peringkat Siswa</span>
-                     </button>
-                     <button onClick={() => setActiveTab('downloads')} className={`w-full flex items-center gap-4 p-3 rounded-lg transition-all ${activeTab === 'downloads' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:bg-white/10 hover:text-white'}`}>
-                       <Icon name="fa-solid fa-cloud-arrow-down" size={22} /><span className="font-bold text-sm">Pusat Unduhan</span>
+                     <button onClick={() => { setActiveTab('leaderboard'); setSidebarOpen(false); }} className={`w-full flex items-center gap-4 p-3.5 rounded-xl transition-all ${activeTab === 'leaderboard' ? 'bg-[#5b51d8] text-white shadow-lg shadow-indigo-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+                       <Icon name="fa-solid fa-trophy text-lg" /> <span className="font-bold text-sm">Peringkat Siswa</span>
                      </button>
                   </div>
                 </nav>
-                <div className="p-6 border-t border-white/10 bg-slate-900 absolute bottom-0 left-0 w-full z-30">
-                  <div className="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-xl">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-sm font-bold shadow-inner"><Icon name="fa-regular fa-user" size={18}/></div>
-                    <div className="overflow-hidden">
-                      <div className="font-bold text-sm truncate text-slate-200">Al Basyir</div>
-                      <div className="text-[10px] text-amber-500 font-bold tracking-widest uppercase truncate">Koordinator</div>
+
+                <div className="p-6 border-t border-white/5 absolute bottom-0 w-full bg-[#0f172a]">
+                  <div className="flex items-center justify-between bg-white/5 p-3 rounded-2xl border border-white/10 group cursor-pointer hover:bg-white/10 transition-colors" onClick={() => setAppUser(null)}>
+                    <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-xs text-white shadow-inner uppercase ${appUser.role === 'admin' ? 'bg-[#5b51d8]' : 'bg-emerald-600'}`}>{appUser.name.charAt(0)}</div>
+                        <div className="overflow-hidden text-left">
+                            <div className="font-black text-xs truncate text-white">{appUser.name}</div>
+                            <div className="text-[9px] text-amber-500 uppercase font-black tracking-widest leading-none mt-1">{appUser.title}</div>
+                        </div>
                     </div>
+                    <Icon name="fa-solid fa-right-from-bracket text-slate-400 group-hover:text-rose-400 text-sm" />
                   </div>
                 </div>
               </div>
 
-              {/* ================================
-                  MOBILE TOP HEADER (di bawah md)
-                  ================================ */}
-              <div 
-                className="md:hidden fixed left-0 w-full bg-slate-900 text-white z-30 mobile-header"
-                style={{ top: showWarning ? '48px' : '0' }}
-              >
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="w-9 h-9 shrink-0 bg-white/10 rounded-xl p-1 flex items-center justify-center overflow-hidden">
-                    <img 
-                      src="LOGO_MANJ.png" 
-                      alt="Logo MANJ" 
-                      className="w-full h-full object-contain"
-                      onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/100x100/f59e0b/0f172a?text=NJ"; }}
-                    />
+              {/* MOBILE TOP BAR */}
+              <div className="md:hidden bg-[#0f172a] text-white p-4 sticky top-0 z-40 flex items-center justify-between shadow-lg border-b border-white/5">
+                 <div className="flex items-center gap-3 px-4 py-3">
+                  <button onClick={() => setSidebarOpen(true)} className="w-9 h-9 flex items-center justify-center bg-white/10 rounded-lg border border-white/10 shrink-0"><Icon name="fa-solid fa-bars" size={16} /></button>
+                  <div className="w-8 h-8 shrink-0 bg-white/10 rounded-lg p-1 flex items-center justify-center overflow-hidden">
+                    <img src="LOGO_MANJ.png" alt="Logo MANJ" className="w-full h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/100x100/f59e0b/0f172a?text=NJ"; }} />
                   </div>
-                  <div className="leading-tight flex-grow">
-                    <div className="font-black text-sm text-white tracking-wide">MONITORING OSN</div>
-                    <div className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">MA Nurul Jadid</div>
+                  <div className="leading-tight flex-grow overflow-hidden text-left">
+                    <div className="font-black text-xs text-white tracking-wide truncate">MONITORING OSN</div>
+                    <div className="text-[9px] text-amber-500 font-bold uppercase tracking-widest mt-0.5">MA Nurul Jadid</div>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-400">Live</span>
+                  <div className="flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 px-2 py-1 rounded-full shrink-0">
+                    <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span></span>
+                    <span className="text-[9px] font-bold text-emerald-400">Live</span>
                   </div>
                 </div>
               </div>
 
-              {/* ================================
-                  MAIN CONTENT AREA
-                  ================================ */}
-              <div 
-                className="flex-grow ml-0 md:ml-64 p-4 md:p-10 max-w-7xl pb-24 md:pb-6 w-full min-w-0"
-                style={{ marginTop: showWarning ? '48px' : '0' }}
-              >
-                {/* Spacer untuk mobile top header (56px) */}
-                <div className="h-14 md:hidden"></div>
-
-                <header className="mb-6 md:mb-8">
-                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 mb-4 md:mb-6">
-                    <div>
-                      <h1 className="text-2xl md:text-4xl font-black text-slate-800 tracking-tight mb-1 uppercase">
-                        {activeTab === 'dashboard' && 'Pusat Kendali Progres'}
-                        {activeTab === 'checklist' && 'Pembaruan Silabus'}
-                        {activeTab === 'issues' && 'Monitoring Kendala'}
-                        {activeTab === 'leaderboard' && 'Peringkat Delegasi'}
-                        {activeTab === 'downloads' && 'Pusat Referensi & Unduhan'}
+              {/* MAIN CONTENT */}
+              <div className="flex-grow ml-0 md:ml-64 p-4 md:p-12 w-full min-w-0">
+                <div className="h-14 md:hidden"></div> {/* Spacer Mobile Header */}
+                
+                <header className="mb-10 flex flex-col gap-6">
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                    <div className="text-left">
+                      <h1 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tight leading-none uppercase">
+                        {activeTab === 'dashboard' ? 'PUSAT KENDALI PROGRES' : activeTab === 'checklist' ? 'PEMBARUAN SILABUS' : activeTab === 'issues' ? 'MONITORING KENDALA' : activeTab === 'leaderboard' ? 'PERINGKAT DELEGASI' : 'ABSENSI GURU'}
                       </h1>
-                      <p className="text-slate-500 font-medium text-sm md:text-base">Masa Persiapan OSN-K 2026 • MA Nurul Jadid</p>
+                      <p className="text-slate-500 font-bold text-xs md:text-sm mt-3 uppercase tracking-widest opacity-80">Masa Persiapan OSN-K 2026 • MA Nurul Jadid</p>
                     </div>
-                    <div className="hidden md:flex bg-white px-4 py-1.5 rounded-full border border-slate-200 text-sm font-bold text-slate-700 items-center gap-2 shadow-sm animate-pulse">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                      </span>
-                      Real-time Monitoring Active
+                    <div className="hidden md:flex bg-white px-4 py-2 rounded-full border border-emerald-100 text-[10px] md:text-xs font-black text-slate-600 items-center gap-2 shadow-sm self-start pulse-active">
+                        <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span> Real-time Monitoring Active
                     </div>
                   </div>
-                  {activeTab !== 'downloads' && (
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide filter-scroll">
-                      <div className="flex items-center gap-2 text-slate-400 text-sm font-bold mr-1 shrink-0"><Icon name="fa-solid fa-filter" size={14}/> <span className="hidden sm:inline">Filter:</span></div>
-                      {FIELDS.map(field => (
-                        <button key={field.id} onClick={() => setActiveField(field.id)} className={`whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs font-bold transition-all shrink-0 ${activeField === field.id ? `${field.color} text-white shadow-md` : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
-                          {field.id === 'ALL' ? field.label : field.id === 'ALL' ? field.label : <><span className="md:hidden">{field.id}</span><span className="hidden md:inline">OSN {field.label}</span></>}
+
+                  {activeTab !== 'attendance' && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
+                      <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-widest pr-2 border-r shrink-0">
+                        <Icon name="fa-solid fa-filter" /> Filter
+                      </div>
+                      {FIELDS.map(f => (
+                        <button key={f.id} onClick={() => setActiveField(f.id)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm ${activeField === f.id ? `bg-slate-800 text-white ring-2 ring-offset-2 ring-slate-200` : 'bg-white text-slate-500 border border-slate-200 hover:border-[#5b51d8]'}`}>
+                            {f.label}
                         </button>
                       ))}
-                    </div>
+                  </div>
                   )}
                 </header>
 
-                {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} />}
-                {activeTab === 'checklist' && <ChecklistView user={user} progressData={progressData} setProgressData={setProgressData} activeField={activeField} isDemo={!isFirebaseConfigured} />}
-                {activeTab === 'issues' && <IssuesView progressData={progressData} activeField={activeField} />}
-                {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} activeField={activeField} />}
-                {activeTab === 'downloads' && <DownloadsView />}
+                <main className="max-w-[1400px] mx-auto pb-24 md:pb-12">
+                    {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} />}
+                    {activeTab === 'checklist' && <ChecklistView appUser={appUser} progressData={progressData} activeField={activeField} />}
+                    {activeTab === 'issues' && <IssuesView progressData={progressData} />}
+                    {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} />}
+                    {activeTab === 'attendance' && <AttendanceView appUser={appUser} attendanceData={attendanceData} setAttendanceData={setAttendanceData} showAlert={showAlert} showConfirm={showConfirm} />}
+                    {activeTab === 'downloads' && <DownloadsView showAlert={showAlert} />}
+                </main>
               </div>
 
-              {/* ================================
-                  MOBILE BOTTOM NAVIGATION (di bawah md)
-                  ================================ */}
-              <div className="md:hidden fixed bottom-0 left-0 w-full bg-slate-900 z-30 border-t border-white/10 mobile-bottom-nav">
+              {/* MOBILE BOTTOM NAVIGATION */}
+              <div className="md:hidden fixed bottom-0 left-0 w-full bg-slate-900 z-30 border-t border-white/10" style={{ paddingBottom: 'env(safe-area-inset-bottom, 8px)' }}>
                 <div className="flex items-center justify-around px-1 pt-2 pb-1">
                   {[
-                    { tab: 'dashboard',   icon: 'fa-solid fa-table-cells-large', label: 'Dashboard' },
-                    { tab: 'checklist',   icon: 'fa-regular fa-square-check',    label: 'Progres'   },
-                    { tab: 'issues',      icon: 'fa-regular fa-comments',         label: 'Kendala'   },
-                    { tab: 'leaderboard', icon: 'fa-solid fa-trophy',             label: 'Peringkat' },
-                    { tab: 'downloads',   icon: 'fa-solid fa-cloud-arrow-down',   label: 'Unduhan'   },
+                    { tab: 'dashboard',   icon: 'fa-solid fa-table-cells-large', label: 'Home' },
+                    { tab: 'checklist',   icon: 'fa-solid fa-square-check',      label: 'Progres'   },
+                    { tab: 'attendance',  icon: 'fa-solid fa-fingerprint',       label: 'Absen'   },
+                    { tab: 'issues',      icon: 'fa-solid fa-comments',          label: 'Kendala'   },
+                    { tab: 'leaderboard', icon: 'fa-solid fa-trophy',            label: 'Peringkat' },
                   ].map(item => (
-                    <button
-                      key={item.tab}
-                      onClick={() => setActiveTab(item.tab)}
-                      className={`mobile-nav-btn flex flex-col items-center gap-0.5 px-3 py-2 min-w-0 flex-1 ${
-                        activeTab === item.tab
-                          ? 'bg-indigo-600 text-white'
-                          : 'text-slate-400 active:bg-white/10'
-                      }`}
-                    >
+                    <button key={item.tab} onClick={() => setActiveTab(item.tab)} className={`flex flex-col items-center gap-1 px-3 py-2 min-w-0 flex-1 rounded-xl transition-colors ${activeTab === item.tab ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>
                       <Icon name={item.icon} size={activeTab === item.tab ? 20 : 18} />
-                      <span className={`text-[9px] font-bold leading-tight ${activeTab === item.tab ? 'text-white' : 'text-slate-500'}`}>
-                        {item.label}
-                      </span>
+                      <span className={`text-[9px] font-bold leading-tight ${activeTab === item.tab ? 'text-white' : 'text-slate-500'}`}>{item.label}</span>
                     </button>
                   ))}
                 </div>
@@ -1311,9 +1340,7 @@
           );
         };
 
-        // Mulai Aplikasi
-        const root = createRoot(document.getElementById('root'));
-        root.render(<App />);
+        createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
