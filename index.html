@@ -80,7 +80,7 @@
         // ==========================================
         const APP_USERS = [
             // AKUN KOORDINATOR (ADMIN)
-            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Admin-Koordinator' },
+            { id: 'admin',     name: 'Al Basyir', role: 'admin', field: 'ALL', pin: '123456', title: 'Koordinator' },
             
             // PEMBIMBING MATEMATIKA
             { id: 'mat_1',     name: 'Nabila Khodijah A.R.',    role: 'guru',  field: 'MAT', pin: '1234',   title: 'Pembimbing MAT' },
@@ -1204,13 +1204,19 @@
                                                                                 )}
                                                                             </div>
                                                                         </div>
-                                                                        <div className="mt-3 text-right">
-                                                                            <button 
-                                                                                onClick={() => handleDeleteLog(guru.id, log.id || log.timestamp)}
-                                                                                className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg border border-rose-100 transition-colors"
-                                                                            >
-                                                                                <Icon name="fa-solid fa-trash-can" className="mr-1" /> Batalkan Absen Ini
-                                                                            </button>
+                                                                        <div className="mt-3 text-right z-10">
+                                                                            {((new Date() - new Date(log.timestamp)) / (1000 * 60 * 60) <= 24) ? (
+                                                                                <button 
+                                                                                    onClick={() => handleDeleteLog(appUser.id, log.id || log.timestamp)}
+                                                                                    className="text-[10px] font-bold text-rose-500 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded border border-rose-100 transition-colors shadow-sm"
+                                                                                >
+                                                                                    <Icon name="fa-solid fa-xmark" className="mr-1" /> Hapus / Batal
+                                                                                </button>
+                                                                            ) : (
+                                                                                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-3 py-1.5 rounded border border-slate-200 inline-flex items-center gap-1.5 shadow-sm cursor-not-allowed" title="Sudah lewat 24 jam. Hubungi Koordinator untuk mengubah data ini.">
+                                                                                    <Icon name="fa-solid fa-lock" size={10} /> Terkunci
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </li>
@@ -1404,7 +1410,7 @@
         };
 
         // ==========================================
-        // KOMPONEN: CEKLIS & LOGBOOK
+        // KOMPONEN: CEKLIS & LOGBOOK (GROUPED STYLE)
         // ==========================================
         const TopicCard = ({ student, topic, currentData, onSave, canEdit }) => {
           const [isExpanded, setIsExpanded] = useState(false);
@@ -1422,54 +1428,71 @@
           const [notes, setNotes] = useState(currentData?.notes || '');
           const hasNotes = score || duration || notes;
 
+          // Memisahkan "Day X" dan judul materinya
+          const titleParts = topic.title.split(': ');
+          const dayLabel = titleParts[0];
+          const topicName = titleParts.length > 1 ? titleParts.slice(1).join(': ') : '';
+
           return (
-            <div className={`p-4 bg-white rounded-lg border transition-all ${isExpanded ? 'border-indigo-600 shadow-md' : 'border-slate-200'}`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3 flex-grow text-left">
-                  <Icon name="fa-solid fa-book-bookmark" className="text-indigo-400 mt-1 shrink-0" />
-                  <div>
-                    <div className="text-sm font-bold text-slate-700">{topic.title}</div>
+            <div className={`flex flex-col p-3 md:p-4 bg-white rounded-lg border transition-all ml-2 md:ml-4 ${isExpanded ? 'border-indigo-600 shadow-md' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 md:gap-4">
+                <div className="flex items-start gap-2 md:gap-3 flex-grow min-w-0">
+                  <Icon name="fa-solid fa-book-open" className="text-indigo-400 mt-1 shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-black text-indigo-700 mr-1 text-sm">{dayLabel}:</span>
+                    <span className="font-bold text-slate-700 text-sm">{topicName}</span>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 shrink-0">
+                
+                <div className="flex flex-wrap items-center gap-1.5 md:gap-2 shrink-0 pl-7 xl:pl-0">
                   {STATUS_TYPES.map(type => (
                     <button 
                         key={type.id} 
                         onClick={() => canEdit && onSave(student.id, topic.id, { status: type.id, score, duration, notes, updatedAt: new Date().toISOString() })}
                         disabled={!canEdit}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                        className={`flex items-center justify-center px-2 md:px-3 py-1.5 rounded text-[10px] md:text-xs font-bold transition-all ${
                             status === type.id 
-                            ? `${type.color} text-white shadow-md` 
-                            : `bg-slate-50 text-slate-400 border border-slate-200 ${canEdit ? 'hover:bg-slate-100' : 'opacity-50 cursor-not-allowed'}`
+                            ? `${type.color} text-white shadow-md ring-2 ring-offset-1 ring-${type.color.split('-')[1]}-400` 
+                            : `bg-slate-50 text-slate-400 border border-slate-200 ${canEdit ? 'hover:border-slate-400 hover:text-slate-600' : 'opacity-50 cursor-not-allowed'}`
                         }`}
                     >
                       {type.label}
                     </button>
                   ))}
-                  <button onClick={() => setIsExpanded(!isExpanded)} className={`px-3 py-1.5 rounded-lg text-[10px] font-black border transition-all ${isExpanded || hasNotes ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-slate-500 border-slate-200'}`}>
-                    <Icon name="fa-regular fa-comment-dots" className="mr-1" /> Logbook
+                  
+                  <div className="w-px h-6 bg-slate-200 mx-1 hidden xl:block"></div>
+                  
+                  <button onClick={() => setIsExpanded(!isExpanded)} className={`flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded text-[10px] md:text-xs font-bold border transition-all ${isExpanded || hasNotes ? 'bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-100' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}>
+                    <Icon name="fa-regular fa-comment-dots" size={14} className={hasNotes && !isExpanded ? 'text-indigo-600' : ''} />
+                    <span className="hidden md:inline">Logbook</span>
+                    <Icon name="fa-solid fa-chevron-down" size={12} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="mt-4 pt-4 border-t border-slate-100 space-y-3 animate-in slide-in-from-top-2 text-left">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="mt-4 pt-4 border-t border-slate-100 pl-7 animate-in fade-in slide-in-from-top-2 text-left">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Durasi (Jam)</label>
-                        <input type="number" disabled={!canEdit} placeholder="Jam" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={duration} onChange={e => setDuration(e.target.value)} />
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest"><Icon name="fa-regular fa-clock" size={12}/> Durasi Belajar (Jam)</label>
+                        <input type="number" disabled={!canEdit} placeholder="Misal: 2.5" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={duration} onChange={e => setDuration(e.target.value)} />
                     </div>
                     <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Skor Latihan</label>
-                        <input type="text" disabled={!canEdit} placeholder="Skor" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={score} onChange={e => setScore(e.target.value)} />
+                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest"><Icon name="fa-solid fa-award" size={12}/> Skor Latihan</label>
+                        <input type="text" disabled={!canEdit} placeholder="Misal: 15/20 atau 85" className={`w-full p-2.5 bg-slate-50 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} value={score} onChange={e => setScore(e.target.value)} />
                     </div>
                   </div>
-                  <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kendala / Catatan</label>
+                  <div className="space-y-1 mb-4">
+                      <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest"><Icon name="fa-solid fa-circle-exclamation" size={12}/> Kendala / Catatan</label>
                       <textarea disabled={!canEdit} placeholder="Tulis kesulitan santri di sini..." className={`w-full p-3 bg-slate-50 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-indigo-500 outline-none ${!canEdit && 'opacity-60 cursor-not-allowed'}`} rows="2" value={notes} onChange={e => setNotes(e.target.value)}></textarea>
                   </div>
                   {canEdit ? (
-                      <button onClick={() => { onSave(student.id, topic.id, { status, score, duration, notes, updatedAt: new Date().toISOString() }); setIsExpanded(false); }} className="w-full bg-indigo-600 text-white py-3 rounded-lg text-xs font-black shadow-md hover:bg-indigo-700 transition-colors uppercase tracking-widest mt-2">Simpan Logbook</button>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                            {currentData?.updatedAt && <><Icon name="fa-solid fa-calendar-check" size={12}/> Update: {safeDate(currentData.updatedAt)} {safeTime(currentData.updatedAt)}</>}
+                        </span>
+                        <button onClick={() => { onSave(student.id, topic.id, { status, score, duration, notes, updatedAt: new Date().toISOString() }); setIsExpanded(false); }} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-sm transition-colors uppercase tracking-widest"><Icon name="fa-regular fa-floppy-disk" size={14}/> Simpan Logbook</button>
+                      </div>
                   ) : (
                       <div className="text-center text-[10px] font-bold text-rose-500 mt-2 bg-rose-50 p-2 rounded-lg border border-rose-100"><Icon name="fa-solid fa-lock" /> Hanya pembimbing {student.field} yang dapat mengedit data ini.</div>
                   )}
@@ -1503,17 +1526,26 @@
             if (selectedId) {
                 const s = DELEGASI.find(x => x.id === selectedId);
                 const p = progressData[selectedId] || {};
+                
+                // Ambil silabus & filter hideAman
                 const syllabus = hideAman ? SYLLABUS_DB[s.field].filter(t => {
                     const tData = p[t.id];
                     const stat = typeof tData === 'object' ? tData.status : tData;
                     return stat !== 'aman';
                 }) : SYLLABUS_DB[s.field];
                 
+                // Logika Grouping berdasarkan 'cat'
+                const groupedSyllabus = syllabus.reduce((acc, topic) => {
+                    if (!acc[topic.cat]) acc[topic.cat] = [];
+                    acc[topic.cat].push(topic);
+                    return acc;
+                }, {});
+
                 const canEdit = appUser.role === 'admin' || (appUser.role === 'guru' && appUser.field === s.field);
 
                 return (
                     <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border animate-in slide-in-from-right-4 pb-24">
-                        <button onClick={() => setSelectedId(null)} className="text-[#5b51d8] font-bold text-sm mb-6 flex items-center gap-2"><Icon name="fa-solid fa-arrow-left" /> Kembali ke Daftar Siswa</button>
+                        <button onClick={() => setSelectedId(null)} className="text-indigo-600 font-bold text-sm mb-6 flex items-center gap-2 hover:-translate-x-1 transition-transform"><Icon name="fa-solid fa-arrow-left" /> Kembali ke Daftar Siswa</button>
                         
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 border-b border-slate-100 pb-6 gap-4">
                             <div>
@@ -1523,7 +1555,7 @@
                                     <StatusBadge student={s} pData={p} appUser={appUser} onOverride={onOverrideStatus} />
                                 </div>
                             </div>
-                            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-2.5 px-4 rounded-xl border border-slate-200 shadow-sm">
+                            <label className="flex items-center gap-2 cursor-pointer bg-slate-50 p-2.5 px-4 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors">
                                 <input type="checkbox" checked={hideAman} onChange={e => setHideAman(e.target.checked)} className="w-4 h-4 text-indigo-600 rounded" />
                                 <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Sembunyikan Aman</span>
                             </label>
@@ -1536,11 +1568,22 @@
                             </div>
                         )}
 
-                        <div className="space-y-4">
-                            {syllabus.length === 0 ? (
+                        <div className="space-y-8">
+                            {Object.keys(groupedSyllabus).length === 0 ? (
                                 <div className="text-center py-10 text-slate-400 font-bold text-sm"><Icon name="fa-solid fa-check-double" className="text-4xl mb-3 text-emerald-400 block mx-auto" /> Semua materi sudah berstatus Aman!</div>
                             ) : (
-                                syllabus.map(t => <TopicCard key={t.id} student={s} topic={t} currentData={p[t.id]} canEdit={canEdit} onSave={async (sid, tid, d) => await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'progress', sid), { ...progressData[sid], [tid]: d })} />)
+                                Object.keys(groupedSyllabus).map(cat => (
+                                    <div key={cat} className="space-y-3">
+                                        <h4 className="font-bold text-slate-500 text-sm uppercase tracking-widest border-l-4 border-indigo-600 pl-3 py-1 bg-slate-50 rounded-r-lg">
+                                            Topik Pokok: {cat}
+                                        </h4>
+                                        <div className="grid gap-3">
+                                            {groupedSyllabus[cat].map(t => (
+                                                <TopicCard key={t.id} student={s} topic={t} currentData={p[t.id]} canEdit={canEdit} onSave={async (sid, tid, d) => await setDoc(doc(db, 'artifacts', appIdStr, 'public', 'data', 'progress', sid), { ...progressData[sid], [tid]: d })} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
                             )}
                         </div>
                     </div>
@@ -2214,7 +2257,7 @@
                 <main className="max-w-[1400px] mx-auto pb-24 md:pb-12">
                     {activeTab === 'dashboard' && <Dashboard progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} onJumpToStudent={handleJumpToProgress} />}
                     {activeTab === 'checklist' && <ChecklistView appUser={appUser} progressData={progressData} activeField={activeField} onOverrideStatus={(s) => setOverrideStudentId(s.id)} resetSignal={resetSignal} checklistTargetId={checklistTargetId} setChecklistTargetId={setChecklistTargetId} />}
-                    {activeTab === 'issues' && <IssuesView progressData={progressData} />}
+                    {activeTab === 'issues' && <IssuesView progressData={progressData} activeField={activeField} />}
                     {activeTab === 'leaderboard' && <LeaderboardView progressData={progressData} activeField={activeField} appUser={appUser} onOverrideStatus={(s) => setOverrideStudentId(s.id)} />}
                     {activeTab === 'attendance' && <AttendanceView appUser={appUser} attendanceData={attendanceData} setAttendanceData={setAttendanceData} showAlert={showAlert} showConfirm={showConfirm} />}
                     {activeTab === 'downloads' && <DownloadsView appUser={appUser} downloadsData={downloadsData} setDownloadsData={setDownloadsData} showAlert={showAlert} showConfirm={showConfirm} isDemo={false} />}
